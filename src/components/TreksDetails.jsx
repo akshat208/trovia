@@ -80,6 +80,7 @@ const GlobalStyles = createGlobalStyle`
   }
 `;
 
+
 // ============================================================
 // ANIMATIONS
 // ============================================================
@@ -332,6 +333,25 @@ const ScrollIndicator = styled.div`
 
 // ============================================================
 // MOBILE BOOKING BAR
+const MobileBar = styled(motion.div)`
+  display: none;
+
+  @media (max-width: 900px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 1rem 1.5rem;
+    background: rgba(10, 10, 10, 0.97);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid ${tokens.border};
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+`;
 
 const MobilePrice = styled.div`
   font-family: "Sora", sans-serif;
@@ -595,6 +615,7 @@ export default function TrekDetails() {
   const [authUser, setAuthUser] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [activeSection, setActiveSection] = useState("overview");
+  const [showBookingFloating, setShowBookingFloating] = useState(false);
 
   // Gallery state
   const [galleryOpen, setGalleryOpen] = useState(false);

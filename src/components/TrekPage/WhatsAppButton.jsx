@@ -29,7 +29,7 @@ const FloatingWA = styled.a`
   }
 
   @media (max-width: 640px) {
-    bottom: 1rem;
+    bottom: 5rem;
     right: 1.25rem;
     width: 50px;
     height: 50px;
