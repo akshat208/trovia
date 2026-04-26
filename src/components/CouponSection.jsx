@@ -1,476 +1,556 @@
 import React, { useState } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { FiCheckCircle, FiXCircle, FiTag, FiLoader } from 'react-icons/fi';
+import styled, { keyframes, css } from 'styled-components';
+import { FiCheckCircle, FiXCircle, FiTag, FiLoader, FiGift, FiScissors } from 'react-icons/fi';
 import { db } from '../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { T as C } from '../theme.js';
 
-const rotate = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-`;
-
-
+// ============================================
+// ANIMATIONS
+// ============================================
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-const CouponContainer = styled.div`
-  background: ${({ theme }) => theme?.background || '#e8c1b030'};
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid ${({ theme }) => theme?.borderColor || '#e0e0e0'};
-  margin-bottom: 20px;
+const fadeSlideIn = keyframes`
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
-const CouponInputSection = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
+const successPop = keyframes`
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
 `;
 
-const IconWrapper = styled.div`
-  width: 44px;
-  height: 44px;
+const shimmer = keyframes`
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+`;
+
+const glowPulse = keyframes`
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+`;
+
+// ============================================
+// STYLED COMPONENTS
+// ============================================
+
+const Wrapper = styled.div`
+  animation: ${fadeSlideIn} 0.4s ease-out;
+`;
+
+// ── Ticket-style outer card ───
+const TicketCard = styled.div`
+  position: relative;
+  background: ${C.bgCard};
+  border-radius: 16px;
+  border: 2px dashed ${props => props.$applied ? C.successBorder : C.border};
+  overflow: visible;
+  transition: all 0.35s ease;
+
+  ${props => props.$applied && css`
+    border-style: solid;
+    background: ${C.successLight};
+    animation: ${successPop} 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-color: ${C.successBorder};
+  `}
+`;
+
+// Decorative notch cutouts on sides
+const Notch = styled.div`
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: ${C.bg};
   border-radius: 50%;
-  background: ${({ theme }) => theme?.mainColor || '#4CAF50'}15;
+  top: 50%;
+  transform: translateY(-50%);
+  ${props => props.$side === 'left' ? 'left: -12px;' : 'right: -12px;'}
+  border: 2px solid ${props => props.$applied ? C.successBorder : C.border};
+  z-index: 2;
+`;
+
+// Top colorful header band
+const CardBand = styled.div`
+  background: linear-gradient(135deg, ${C.primary} 0%, ${C.primaryDark} 100%);
+  padding: 0.85rem 1.25rem;
+  border-radius: 13px 13px 0 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme?.mainColor || '#4CAF50'};
-  flex-shrink: 0;
+  gap: 0.6rem;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255,255,255,0.08) 50%,
+      transparent 100%
+    );
+    background-size: 400px 100%;
+    animation: ${shimmer} 3s ease-in-out infinite;
+  }
+
+  svg { color: white; flex-shrink: 0; }
 `;
 
-const ContentWrapper = styled.div`
+const BandTitle = styled.span`
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+`;
+
+const BandSubtitle = styled.span`
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.75);
+  margin-left: auto;
+`;
+
+// Dashed divider line
+const DashedDivider = styled.div`
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    ${props => props.$applied ? C.successBorder : C.border} 0px,
+    ${props => props.$applied ? C.successBorder : C.border} 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  margin: 0 1.25rem;
+`;
+
+// Body of the ticket
+const CardBody = styled.div`
+  padding: 1.1rem 1.25rem 1.25rem;
+`;
+
+// Input row
+const InputRow = styled.div`
+  display: flex;
+  gap: 0.65rem;
+  align-items: stretch;
+`;
+
+const InputWrap = styled.div`
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const CouponLabel = styled.span`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${({ theme }) => theme?.textColor || '#333'};
-`;
-
-const CouponForm = styled.form`
-  display: flex;
-  gap: 10px;
-  width: 100%;
+  position: relative;
 `;
 
 const CouponInput = styled.input`
-  flex: 1;
-  padding: 10px 14px;
-  border: 2px solid ${({ theme }) => theme?.borderColor || '#e0e0e0'};
-  border-radius: 8px;
-  font-size: 14px;
-  letter-spacing: 1.5px;
-  font-weight: 600;
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 1px solid ${C.border};
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
+  color: ${C.textPrimary};
+  background: ${C.bg};
   outline: none;
-  transition: border-color 0.3s ease;
-  background: ${({ theme }) => theme?.inputBg || '#f9f9f9'};
-  color: ${({ theme }) => theme?.textColor || '#333'};
-
-  &:focus {
-    border-color: ${({ theme }) => theme?.mainColor || '#4CAF50'};
-  }
+  transition: all 0.25s ease;
+  font-family: 'Courier New', monospace;
 
   &::placeholder {
     font-weight: 400;
-    letter-spacing: 0.5px;
-    color: #aaa;
+    letter-spacing: 1px;
+    color: ${C.textMuted};
+    font-family: 'Inter', sans-serif;
+    text-transform: none;
+    font-size: 0.85rem;
+  }
+
+  &:focus {
+    border-color: ${C.primary};
+    background: ${C.bgCard};
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
   }
 `;
 
-const ApplyButton = styled.button`
-  padding: 10px 24px;
-  background: ${({ theme }) => theme?.mainColor || '#4CAF50'};
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+const InputIcon = styled.div`
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: ${C.primary};
   display: flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  opacity: 0.7;
+`;
 
-  &:hover {
-    background: ${({ theme }) => theme?.hoverColor || '#43A047'};
-    transform: translateY(-1px);
+const ApplyBtn = styled.button`
+  padding: 0.8rem 1.4rem;
+  background: linear-gradient(135deg, ${C.primary} 0%, ${C.primaryDark} 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background: #ccc;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
     cursor: not-allowed;
-    transform: none;
   }
 
   .spin {
-    animation: ${spin} 1s linear infinite;
+    animation: ${spin} 0.8s linear infinite;
   }
 `;
 
-const ErrorText = styled.div`
+// Error message
+const ErrorBox = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #e74c3c;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 4px;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background: ${C.errorLight};
+  border: 1px solid ${C.errorBorder};
+  border-radius: 8px;
+  color: ${C.error};
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.65rem;
+  animation: ${fadeSlideIn} 0.25s ease-out;
 `;
 
-const AppliedCouponSection = styled.div`
+// Hint text below input
+const HintRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: ${({ theme }) => theme?.mainColor || '#4CAF50'}10;
-  border: 1px dashed ${({ theme }) => theme?.mainColor || '#4CAF50'};
-  border-radius: 10px;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: ${C.textSecondary};
 `;
 
-const SuccessIconWrapper = styled.div`
+const HintDot = styled.span`
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: ${C.primary};
+  flex-shrink: 0;
+`;
+
+// ── Applied coupon display ────
+const AppliedInner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const SuccessCircle = styled.div`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: ${({ theme }) => theme?.mainColor || '#4CAF50'}20;
+  background: linear-gradient(135deg, ${C.success}, #16803d);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${({ theme }) => theme?.mainColor || '#4CAF50'};
+  color: white;
   flex-shrink: 0;
+  animation: ${glowPulse} 2.5s ease-in-out infinite;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
 `;
 
-const CouponInfo = styled.div`
+const AppliedInfo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 `;
 
-const CouponCodeTag = styled.span`
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: ${({ theme }) => theme?.mainColor || '#4CAF50'};
+const AppliedTopRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+`;
+
+const CodeBadge = styled.span`
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: ${C.success};
+  font-family: 'Courier New', monospace;
+  background: ${C.successBorder};
+  padding: 0.15rem 0.6rem;
+  border-radius: 6px;
   text-transform: uppercase;
 `;
 
-const SaveAmount = styled.span`
-  font-size: 14px;
-  font-weight: 600;
-  color: ${({ theme }) => theme?.mainColor || '#4CAF50'};
+const SavedBadge = styled.span`
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, ${C.success}, #16803d);
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
 `;
 
-const CouponMeta = styled.span`
-  font-size: 12px;
-  color: #888;
-  line-height: 1.4;
+const AppliedDesc = styled.span`
+  font-size: 0.78rem;
+  color: ${C.textSecondary};
+  margin-top: 2px;
 `;
 
-const RemoveLink = styled.button`
+const AppliedExpiry = styled.span`
+  font-size: 0.72rem;
+  color: ${C.textMuted};
+`;
+
+const RemoveBtn = styled.button`
   background: none;
-  border: none;
-  color: #e74c3c;
-  font-size: 13px;
-  font-weight: 600;
+  border: 1.5px solid ${C.errorBorder};
+  color: ${C.error};
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   flex-shrink: 0;
+  letter-spacing: 0.02em;
 
   &:hover {
-    background: #e74c3c15;
-    text-decoration: underline;
+    background: ${C.errorLight};
+    border-color: ${C.error};
   }
 `;
 
-const CouponMessage = styled.div`
+// Savings summary strip at the bottom
+const SavingsStrip = styled.div`
+  margin-top: 0.85rem;
+  padding: 0.7rem 1rem;
+  background: ${C.successLight};
+  border: 1px solid ${C.successBorder};
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  justify-content: space-between;
+  animation: ${fadeSlideIn} 0.3s ease-out;
+`;
+
+const SavingsLabel = styled.span`
+  font-size: 0.82rem;
+  color: ${C.textSecondary};
   font-weight: 500;
-  margin-top: 10px;
-  background: ${({ type }) => type === 'error' ? '#fde8e8' : '#e8f5e9'};
-  color: ${({ type }) => type === 'error' ? '#e74c3c' : '#2e7d32'};
 `;
 
-
-
-const CouponHeader = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  gap: 10px;
-  color: ${props => props.theme.textColor || props.theme.mainColor || '#5390D9'};
-  font-weight: 600;
+const SavingsAmount = styled.span`
+  font-size: 1rem;
+  font-weight: 800;
+  color: ${C.success};
 `;
 
-
-
-
-const DiscountInfo = styled.div`
-  margin-top: 15px;
-  padding: 15px;
-  background: ${props => props.theme.gradientLight || 'linear-gradient(135deg, rgba(83, 144, 217, 0.2), rgba(105, 106, 182, 0.2))'};
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-`;
-
-const DiscountValue = styled.div`
-  font-size: 18px;
-  font-weight: 600;
-  color: #000000;
-  margin-bottom: 5px;
-`;
-
-const DiscountDescription = styled.div`
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.7);
-`;
-
-const CouponTag = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  color: #000000;
-  font-size: 13px;
-  margin-top: 10px;
-`;
-
-const CouponValidity = styled.div`
-  font-size: 13px;
-  color: rgba(6, 5, 5, 0.6);
-  margin-top: 5px;
-`;
-
-const CouponSection = ({ orderTotal, onApplyCoupon, theme }) => {
+// ============================================
+// COMPONENT
+// ============================================
+const CouponSection = ({ orderTotal, onApplyCoupon }) => {
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [activeCoupon, setActiveCoupon] = useState(null);
-  
-  const handleApplyCoupon = async (e) => {
+
+  const handleApply = async (e) => {
     e.preventDefault();
-    
-    if (!couponCode.trim()) {
-      setError('Please enter a coupon code');
-      return;
-    }
-    
+    if (!couponCode.trim()) { setError('Please enter a coupon code'); return; }
+
     setLoading(true);
     setError('');
-    setSuccess('');
-    
+
     try {
-      const couponRef = query(
-        collection(db, 'coupons'), 
-        where('code', '==', couponCode.trim().toUpperCase())
+      const snap = await getDocs(
+        query(collection(db, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()))
       );
-      
-      const couponSnapshot = await getDocs(couponRef);
-      
-      if (couponSnapshot.empty) {
-        setError('Invalid coupon code');
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
+
+      if (snap.empty) {
+        setError('Invalid coupon code. Please check and try again.');
+        onApplyCoupon?.(null);
         return;
       }
-      
-      const couponData = {
-        id: couponSnapshot.docs[0].id,
-        ...couponSnapshot.docs[0].data()
-      };
-      
-      // Convert Firestore timestamps to Date objects
-      if (couponData.validFrom) {
-        couponData.validFrom = couponData.validFrom.toDate();
-      }
-      if (couponData.validUntil) {
-        couponData.validUntil = couponData.validUntil.toDate();
-      }
-      
-      // Validate coupon status
-      if (couponData.status === 'inactive') {
-        setError('This coupon is inactive');
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
-        return;
-      }
-      
-      // Validate dates
+
+      const couponData = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (couponData.validFrom) couponData.validFrom = couponData.validFrom.toDate();
+      if (couponData.validUntil) couponData.validUntil = couponData.validUntil.toDate();
+
       const now = new Date();
-      
+
+      if (couponData.status === 'inactive') {
+        setError('This coupon is no longer active.');
+        onApplyCoupon?.(null);
+        return;
+      }
       if (couponData.validFrom && now < couponData.validFrom) {
-        setError(`This coupon is not valid yet. It will be active from ${couponData.validFrom.toLocaleDateString()}`);
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
+        setError(`Coupon active from ${couponData.validFrom.toLocaleDateString()}.`);
+        onApplyCoupon?.(null);
         return;
       }
-      
       if (couponData.validUntil && now > couponData.validUntil) {
-        setError(`This coupon has expired on ${couponData.validUntil.toLocaleDateString()}`);
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
+        setError(`This coupon expired on ${couponData.validUntil.toLocaleDateString()}.`);
+        onApplyCoupon?.(null);
         return;
       }
-      
-      // Validate usage limit
       if (couponData.usageLimit && couponData.usageCount >= couponData.usageLimit) {
-        setError('This coupon has reached its usage limit');
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
+        setError('This coupon has reached its usage limit.');
+        onApplyCoupon?.(null);
         return;
       }
-      
-      // Validate minimum purchase
       if (couponData.minPurchase && orderTotal < couponData.minPurchase) {
-        setError(`This coupon requires a minimum purchase of ₹${couponData.minPurchase}`);
-        setActiveCoupon(null);
-        if (onApplyCoupon) onApplyCoupon(null);
+        setError(`Minimum order of ₹${couponData.minPurchase} required.`);
+        onApplyCoupon?.(null);
         return;
       }
-      
-      // Calculate discount
-      let discountAmount = 0;
-      
-      if (couponData.discountType === 'percentage') {
-        discountAmount = (orderTotal * couponData.discountValue) / 100;
-        
-        // Apply max discount if specified
-        if (couponData.maxDiscount && discountAmount > couponData.maxDiscount) {
-          discountAmount = couponData.maxDiscount;
-        }
-      } else {
-        // Fixed discount
-        discountAmount = couponData.discountValue;
-        
-        // Make sure discount doesn't exceed order total
-        if (discountAmount > orderTotal) {
-          discountAmount = orderTotal;
-        }
-      }
-      
-      // Set active coupon with calculated discount
-      const activeCouponWithDiscount = {
-        ...couponData,
-        calculatedDiscount: discountAmount
-      };
-      
-      setActiveCoupon(activeCouponWithDiscount);
-      setSuccess('Coupon applied successfully!');
-      
-      // Notify parent component
-      if (onApplyCoupon) {
-        onApplyCoupon(activeCouponWithDiscount);
-      }
+
+      let discount = couponData.discountType === 'percentage'
+        ? Math.min((orderTotal * couponData.discountValue) / 100, couponData.maxDiscount || Infinity)
+        : Math.min(couponData.discountValue, orderTotal);
+
+      const result = { ...couponData, calculatedDiscount: discount };
+      setActiveCoupon(result);
+      onApplyCoupon?.(result);
     } catch (err) {
-      console.error('Error applying coupon:', err);
+      console.error(err);
       setError('Failed to apply coupon. Please try again.');
-      setActiveCoupon(null);
-      if (onApplyCoupon) onApplyCoupon(null);
+      onApplyCoupon?.(null);
     } finally {
       setLoading(false);
     }
   };
-  
-  const handleRemoveCoupon = () => {
+
+  const handleRemove = () => {
     setCouponCode('');
     setActiveCoupon(null);
     setError('');
-    setSuccess('');
-    
-    // Notify parent component
-    if (onApplyCoupon) {
-      onApplyCoupon(null);
-    }
-  };
-  
-  const formatDate = (date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString();
+    onApplyCoupon?.(null);
   };
 
- return (
-  <CouponContainer theme={theme}>
-    {!activeCoupon ? (
-      <CouponInputSection>
-        <IconWrapper>
-          <FiTag size={22} />
-        </IconWrapper>
-        
-        <ContentWrapper>
-          <CouponLabel>Apply Coupon</CouponLabel>
-          
-          <CouponForm onSubmit={handleApplyCoupon}>
-            <CouponInput
-              type="text"
-              placeholder="Enter code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              theme={theme}
-            />
-            <ApplyButton 
-              type="submit" 
-              disabled={loading || !couponCode.trim()} 
-              theme={theme}
-            >
-              {loading ? <FiLoader className="spin" size={18} /> : 'Apply'}
-            </ApplyButton>
-          </CouponForm>
-          
-          {error && (
-            <ErrorText>
-              <FiXCircle size={14} /> {error}
-            </ErrorText>
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+      : '';
+
+  return (
+    <Wrapper>
+      <TicketCard $applied={!!activeCoupon}>
+        <Notch $side="left" $applied={!!activeCoupon} />
+        <Notch $side="right" $applied={!!activeCoupon} />
+
+        {/* Header band */}
+        <CardBand>
+          {activeCoupon ? <FiGift size={16} /> : <FiScissors size={16} />}
+          <BandTitle>{activeCoupon ? 'Coupon Applied!' : 'Have a Coupon?'}</BandTitle>
+          {!activeCoupon && <BandSubtitle>Save on your trek</BandSubtitle>}
+        </CardBand>
+
+        <DashedDivider $applied={!!activeCoupon} />
+
+        <CardBody>
+          {!activeCoupon ? (
+            <>
+              <InputRow>
+                <InputWrap>
+                  <InputIcon><FiTag size={14} /></InputIcon>
+                  <CouponInput
+                    type="text"
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      if (error) setError('');
+                    }}
+                  />
+                </InputWrap>
+                <ApplyBtn
+                  type="button"
+                  onClick={handleApply}
+                  disabled={loading || !couponCode.trim()}
+                >
+                  {loading
+                    ? <FiLoader className="spin" size={16} />
+                    : 'Apply'}
+                </ApplyBtn>
+              </InputRow>
+
+              {error && (
+                <ErrorBox>
+                  <FiXCircle size={13} /> {error}
+                </ErrorBox>
+              )}
+
+              <HintRow>
+                <HintDot />
+                Coupons are case-insensitive and applied at checkout
+              </HintRow>
+            </>
+          ) : (
+            <>
+              <AppliedInner>
+                <SuccessCircle>
+                  <FiCheckCircle size={22} />
+                </SuccessCircle>
+
+                <AppliedInfo>
+                  <AppliedTopRow>
+                    <CodeBadge>{activeCoupon.code}</CodeBadge>
+                    <SavedBadge>
+                      {activeCoupon.discountType === 'percentage'
+                        ? `${activeCoupon.discountValue}% OFF`
+                        : `₹${activeCoupon.discountValue} OFF`}
+                    </SavedBadge>
+                  </AppliedTopRow>
+                  {activeCoupon.description && (
+                    <AppliedDesc>{activeCoupon.description}</AppliedDesc>
+                  )}
+                  {activeCoupon.validUntil && (
+                    <AppliedExpiry>Expires {formatDate(activeCoupon.validUntil)}</AppliedExpiry>
+                  )}
+                </AppliedInfo>
+
+                <RemoveBtn onClick={handleRemove}>Remove</RemoveBtn>
+              </AppliedInner>
+
+              <SavingsStrip>
+                <SavingsLabel>🎉 Total discount applied</SavingsLabel>
+                <SavingsAmount>− ₹{activeCoupon.calculatedDiscount?.toFixed(2)}</SavingsAmount>
+              </SavingsStrip>
+            </>
           )}
-        </ContentWrapper>
-      </CouponInputSection>
-    ) : (
-      <AppliedCouponSection theme={theme}>
-        <SuccessIconWrapper>
-          <FiCheckCircle size={24} />
-        </SuccessIconWrapper>
-        
-        <CouponInfo>
-          <CouponCodeTag>{activeCoupon.code}</CouponCodeTag>
-          
-          <SaveAmount theme={theme}>
-            You save {activeCoupon.discountType === 'percentage' 
-              ? `${activeCoupon.discountValue}%` 
-              : `₹${activeCoupon.discountValue}`}
-          </SaveAmount>
-          
-          <CouponMeta>
-            {activeCoupon.description}
-            {activeCoupon.validUntil && (
-              <> • Expires {formatDate(activeCoupon.validUntil)}</>
-            )}
-          </CouponMeta>
-        </CouponInfo>
-        
-        <RemoveLink onClick={handleRemoveCoupon}>
-          Remove
-        </RemoveLink>
-      </AppliedCouponSection>
-    )}
-  </CouponContainer>
-);
+        </CardBody>
+      </TicketCard>
+    </Wrapper>
+  );
 };
 
 export default CouponSection;
