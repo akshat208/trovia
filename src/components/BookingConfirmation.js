@@ -227,9 +227,11 @@ const BookingIdPill = styled.div`
   border-radius: 100px; font-family: 'Courier New', monospace;
   font-size: 0.88rem; font-weight: 700; color: ${theme.primary};
   letter-spacing: 0.05em; position: relative; overflow: hidden;
-  &::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  &::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-    animation: ${shimmer} 2s infinite; }
+    animation: ${shimmer} 2s infinite;
+  }
 `;
 
 // ─────────────────────────────────────────────
@@ -279,8 +281,10 @@ const Card = styled.div`
 const CardHead = styled.div`
   padding: 1rem 1.25rem; border-bottom: 1px solid ${theme.border};
   display: flex; align-items: center; gap: 0.75rem; position: relative;
-  &::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, ${theme.primary}, ${theme.primaryDark}); opacity: 0.6; }
+  &::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, ${theme.primary}, ${theme.primaryDark}); opacity: 0.6;
+  }
 `;
 
 const CardIconWrap = styled.div`
@@ -429,13 +433,25 @@ const StatusBadge = styled.span`
   display: inline-flex; align-items: center; gap: 0.3rem;
   padding: 0.3rem 0.75rem; border-radius: 20px;
   font-size: 0.78rem; font-weight: 700;
-  background: ${p => p.$type==='success' ? 'rgba(34,197,94,0.12)' : p.$type==='warning' ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.06)'};
-  color: ${p => p.$type==='success' ? theme.success : p.$type==='warning' ? theme.primary : theme.textMuted};
-  border: 1px solid ${p => p.$type==='success' ? 'rgba(34,197,94,0.25)' : p.$type==='warning' ? 'rgba(249,115,22,0.25)' : theme.border};
+  background: ${p => p.$type === 'success'
+    ? 'rgba(34,197,94,0.12)'
+    : p.$type === 'warning'
+      ? 'rgba(249,115,22,0.12)'
+      : 'rgba(255,255,255,0.06)'};
+  color: ${p => p.$type === 'success'
+    ? theme.success
+    : p.$type === 'warning'
+      ? theme.primary
+      : theme.textMuted};
+  border: 1px solid ${p => p.$type === 'success'
+    ? 'rgba(34,197,94,0.25)'
+    : p.$type === 'warning'
+      ? 'rgba(249,115,22,0.25)'
+      : theme.border};
 `;
 
 // ─────────────────────────────────────────────
-// TRUST NOTE — proper styled component (no inline animation)
+// TRUST NOTE
 // ─────────────────────────────────────────────
 const TrustNote = styled.div`
   display: flex;
@@ -515,7 +531,11 @@ const BtnConfirmSecondary = styled.button`
   border: 1px solid ${theme.border}; background: rgba(255,255,255,0.04);
   color: ${theme.textSecondary}; font-size: 0.85rem; font-weight: 600;
   cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
-  &:hover { background: rgba(255,255,255,0.08); border-color: ${theme.textSecondary}; color: ${theme.textPrimary}; }
+  &:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: ${theme.textSecondary};
+    color: ${theme.textPrimary};
+  }
   @media (max-width: 600px) { flex: 1; padding: 0.875rem 1rem; font-size: 0.82rem; }
 `;
 
@@ -527,11 +547,16 @@ const BtnConfirmPrimary = styled.button`
   cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;
   box-shadow: 0 4px 16px rgba(249,115,22,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
   position: relative; overflow: hidden;
-  &::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  &::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-    transition: left 0.5s ease; }
+    transition: left 0.5s ease;
+  }
   &:hover::before { left: 100%; }
-  &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(249,115,22,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(249,115,22,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
   &:active { transform: translateY(0); }
   @media (max-width: 600px) { flex: 1.5; padding: 0.875rem 1rem; font-size: 0.85rem; }
 `;
@@ -546,7 +571,8 @@ const FullCenter = styled.div`
 
 const BigSpinner = styled.div`
   width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.07);
-  border-top-color: ${theme.primary}; border-radius: 50%; animation: ${spin} 0.8s linear infinite;
+  border-top-color: ${theme.primary}; border-radius: 50%;
+  animation: ${spin} 0.8s linear infinite;
 `;
 
 // ─────────────────────────────────────────────
@@ -555,9 +581,15 @@ const BigSpinner = styled.div`
 const formatDate = (val) => {
   if (!val) return 'Not specified';
   try {
-    if (typeof val === 'string') return new Date(val).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    if (val.toDate) return val.toDate().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    if (val instanceof Date) return val.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (typeof val === 'string') return new Date(val).toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    if (val.toDate) return val.toDate().toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+    if (val instanceof Date) return val.toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
     return String(val);
   } catch { return String(val); }
 };
@@ -590,16 +622,26 @@ const BookingConfirmation = () => {
   useEffect(() => {
     (async () => {
       try {
-        if (!auth.currentUser) { setError('Please log in to view booking details.'); setLoading(false); return; }
+        if (!auth.currentUser) {
+          setError('Please log in to view booking details.');
+          setLoading(false);
+          return;
+        }
         const data = await BookingService.getBookingById(bookingId);
         let profile = {};
         try {
           const snap = await getDoc(doc(db, 'users', auth.currentUser.uid));
           if (snap.exists()) profile = snap.data();
         } catch {}
-        const combined = { uid: auth.currentUser.uid, email: auth.currentUser.email, displayName: auth.currentUser.displayName, ...profile };
+        const combined = {
+          uid: auth.currentUser.uid,
+          email: auth.currentUser.email,
+          displayName: auth.currentUser.displayName,
+          ...profile
+        };
         setBooking({
-          ...data, userInfo: combined,
+          ...data,
+          userInfo: combined,
           userName: data.name || data.userName || combined.name || combined.displayName || '',
           userEmail: data.email || data.userEmail || combined.email || '',
           userPhone: data.contactNumber || data.phoneNumber || combined.phone || combined.contactNumber || '',
@@ -607,16 +649,25 @@ const BookingConfirmation = () => {
       } catch (e) {
         console.error(e);
         setError('Could not retrieve booking details. Please try again.');
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [bookingId]);
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: 'My Trek Booking', text: `Booking ID: ${bookingId}`, url: window.location.href }).catch(() => {});
-    } else { navigator.clipboard.writeText(window.location.href); }
+      navigator.share({
+        title: 'My Trek Booking',
+        text: `Booking ID: ${bookingId}`,
+        url: window.location.href
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+    }
   };
 
+  // ── Guards ──
   if (loading) return (
     <FullCenter>
       <BigSpinner />
@@ -628,7 +679,7 @@ const BookingConfirmation = () => {
     <PageWrapper>
       <TopBar>
         <TopBarInner>
-          <BackBtn onClick={() => navigate(-1)}><FiArrowLeft size={17}/></BackBtn>
+          <BackBtn onClick={() => navigate(-1)}><FiArrowLeft size={17} /></BackBtn>
           <TopBarContent>
             <TopBarLabel>Booking</TopBarLabel>
             <TopBarTitle>Not <TopBarTitleAccent>Found</TopBarTitleAccent></TopBarTitle>
@@ -637,8 +688,12 @@ const BookingConfirmation = () => {
       </TopBar>
       <FullCenter>
         <FiAlertCircle size={40} color={theme.primary} />
-        <h2 style={{ color: theme.textPrimary, fontSize: '1.25rem', fontWeight: 700 }}>{error || 'Booking not found'}</h2>
-        <p style={{ color: theme.textMuted, fontSize: '0.9rem' }}>We couldn't find booking details for this ID.</p>
+        <h2 style={{ color: theme.textPrimary, fontSize: '1.25rem', fontWeight: 700 }}>
+          {error || 'Booking not found'}
+        </h2>
+        <p style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
+          We couldn't find booking details for this ID.
+        </p>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
           <BtnConfirmSecondary onClick={() => navigate('/profile')}>My Profile</BtnConfirmSecondary>
           <BtnConfirmPrimary onClick={() => navigate('/explore')}>Explore Treks</BtnConfirmPrimary>
@@ -649,13 +704,6 @@ const BookingConfirmation = () => {
 
   // ─────────────────────────────────────────────
   // ★ COMPUTED — Read stored values from BookingPage
-  // BookingPage saves:
-  //   totalAmount     = FULL trek cost (e.g. ₹6,170)
-  //   upfrontAmount   = 20% paid online (e.g. ₹1,234)
-  //   remainingAmount = 80% to organizer (e.g. ₹4,936)
-  //   pricePerPerson  = per person price
-  //   subtotal        = before discount
-  //   discount        = coupon discount
   // ─────────────────────────────────────────────
   const participantCount = getParticipantCount(booking);
   const statusType = getStatus(booking);
@@ -664,46 +712,39 @@ const BookingConfirmation = () => {
   const couponData = booking.coupon || null;
   const discountApplied = booking.discount || booking.discountAmount || 0;
 
-  // ★ FULL trek cost — what the trek actually costs total
+  // ★ FULL trek cost
   const fullTrekCost = (() => {
-    // Best case: BookingPage stored totalAmount as full cost AND upfrontAmount as 20%
     if (booking.upfrontAmount && booking.totalAmount && booking.totalAmount > booking.upfrontAmount) {
-      return booking.totalAmount; // ✅ e.g. ₹6,170
+      return booking.totalAmount;
     }
-    // If subtotal exists, use that minus discount
     if (booking.subtotal) {
       return Math.max(booking.subtotal - discountApplied, 0);
     }
-    // Calculate from pricePerPerson
     if (pricePerPerson > 0) {
       return Math.max((pricePerPerson * participantCount) - discountApplied, 0);
     }
-    // If we only have totalAmount and no upfrontAmount, totalAmount IS the full cost
     if (booking.totalAmount && !booking.upfrontAmount) {
       return booking.totalAmount;
     }
     return booking.totalAmount || 0;
   })();
 
-  // ★ 20% — what was paid via Razorpay
-  const upfrontPaid = booking.upfrontAmount   // Explicitly saved by BookingPage ✅
+  // ★ 20% paid online
+  const upfrontPaid = booking.upfrontAmount
     || booking.paidAmount
     || booking.amountPaid
-    || Math.ceil(fullTrekCost * 0.20);         // Fallback for old bookings
+    || Math.ceil(fullTrekCost * 0.20);
 
-  // ★ 80% — what remains to pay organizer
-  const remaining = booking.remainingAmount   // Explicitly saved by BookingPage ✅
+  // ★ 80% to organizer
+  const remaining = booking.remainingAmount
     || booking.balanceAmount
     || booking.amountDue
-    || Math.max(fullTrekCost - upfrontPaid, 0); // Fallback for old bookings
+    || Math.max(fullTrekCost - upfrontPaid, 0);
 
   const subtotalAmount = booking.subtotal || (pricePerPerson * participantCount) || fullTrekCost;
 
-  // Debug log
   console.log('💰 BookingConfirmation amounts:', {
-    fullTrekCost,
-    upfrontPaid,
-    remaining,
+    fullTrekCost, upfrontPaid, remaining,
     from_db: {
       totalAmount: booking.totalAmount,
       upfrontAmount: booking.upfrontAmount,
@@ -714,18 +755,21 @@ const BookingConfirmation = () => {
     }
   });
 
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
   return (
     <PageWrapper>
 
-      {/* ★ PREMIUM TOP BAR */}
+      {/* ★ TOP BAR */}
       <TopBar>
         <TopBarInner>
           <BackBtn onClick={() => navigate(-1)}>
-            <FiArrowLeft size={17}/>
+            <FiArrowLeft size={17} />
           </BackBtn>
           <TopBarContent>
             <TopBarLabel>
-              <FiCheckCircle size={10}/>
+              <FiCheckCircle size={10} />
               Adventure Confirmed
             </TopBarLabel>
             <TopBarTitle>
@@ -734,11 +778,11 @@ const BookingConfirmation = () => {
           </TopBarContent>
           <TopBarRight>
             <TopBarBadge>
-              <FiShield size={11}/>
+              <FiShield size={11} />
               <span>Razorpay Secured</span>
             </TopBarBadge>
             <IconBtn onClick={handleShare} title="Share">
-              <FiShare2 size={15}/>
+              <FiShare2 size={15} />
             </IconBtn>
           </TopBarRight>
         </TopBarInner>
@@ -748,23 +792,26 @@ const BookingConfirmation = () => {
 
         {/* Success hero */}
         <SuccessHero>
-          <SuccessCircle><FiCheckCircle size={36}/></SuccessCircle>
+          <SuccessCircle><FiCheckCircle size={36} /></SuccessCircle>
           <SuccessTitle>Booking Confirmed! 🎉</SuccessTitle>
           <SuccessSubtitle>
-            Your adventure is locked in. We've sent a confirmation to {booking.userEmail || 'your email'}.
+            Your adventure is locked in. We've sent a confirmation to{' '}
+            {booking.userEmail || 'your email'}.
           </SuccessSubtitle>
-          <BookingIdPill><FiFileText size={13}/>{booking.id}</BookingIdPill>
+          <BookingIdPill>
+            <FiFileText size={13} />{booking.id}
+          </BookingIdPill>
         </SuccessHero>
 
-        {/* ★ Payment status — shows correct split amounts */}
+        {/* Payment status */}
         <PayStatusBanner>
           <PayStatusItem $success>
-            <PayStatusLabel><FiCheckCircle size={11}/>Paid Online (20%)</PayStatusLabel>
+            <PayStatusLabel><FiCheckCircle size={11} />Paid Online (20%)</PayStatusLabel>
             <PayStatusValue $success>₹{upfrontPaid.toLocaleString('en-IN')}</PayStatusValue>
             <PayStatusNote>Booking deposit via Razorpay · Confirmed</PayStatusNote>
           </PayStatusItem>
           <PayStatusItem>
-            <PayStatusLabel><FiInfo size={11}/>Pay to Organizer (80%)</PayStatusLabel>
+            <PayStatusLabel><FiInfo size={11} />Pay to Organizer (80%)</PayStatusLabel>
             <PayStatusValue>₹{remaining.toLocaleString('en-IN')}</PayStatusValue>
             <PayStatusNote>Remaining balance · Due on trek day</PayStatusNote>
           </PayStatusItem>
@@ -774,14 +821,14 @@ const BookingConfirmation = () => {
         {booking.trek && (
           <Card $delay="0.1s">
             <CardHead>
-              <CardIconWrap><FiMapPin size={16}/></CardIconWrap>
+              <CardIconWrap><FiMapPin size={16} /></CardIconWrap>
               <CardTitle>Trek Details</CardTitle>
             </CardHead>
             <CardBody>
               {booking.trek.imageUrl && (
                 <TrekImageWrap>
-                  <TrekImage src={booking.trek.imageUrl} alt={booking.trek.title}/>
-                  <TrekImageOverlay/>
+                  <TrekImage src={booking.trek.imageUrl} alt={booking.trek.title} />
+                  <TrekImageOverlay />
                 </TrekImageWrap>
               )}
               <DetailGrid>
@@ -794,10 +841,16 @@ const BookingConfirmation = () => {
                   <DetailValue>{booking.trek.location || '—'}</DetailValue>
                 </DetailItem>
                 {booking.trek.duration && (
-                  <DetailItem><DetailLabel>Duration</DetailLabel><DetailValue>{booking.trek.duration}</DetailValue></DetailItem>
+                  <DetailItem>
+                    <DetailLabel>Duration</DetailLabel>
+                    <DetailValue>{booking.trek.duration}</DetailValue>
+                  </DetailItem>
                 )}
                 {booking.trek.difficulty && (
-                  <DetailItem><DetailLabel>Difficulty</DetailLabel><DetailValue>{booking.trek.difficulty}</DetailValue></DetailItem>
+                  <DetailItem>
+                    <DetailLabel>Difficulty</DetailLabel>
+                    <DetailValue>{booking.trek.difficulty}</DetailValue>
+                  </DetailItem>
                 )}
               </DetailGrid>
             </CardBody>
@@ -807,20 +860,31 @@ const BookingConfirmation = () => {
         {/* Booking details */}
         <Card $delay="0.15s">
           <CardHead>
-            <CardIconWrap><FiCalendar size={16}/></CardIconWrap>
+            <CardIconWrap><FiCalendar size={16} /></CardIconWrap>
             <CardTitle>Booking Details</CardTitle>
           </CardHead>
           <CardBody>
             <DetailGrid>
-              <DetailItem><DetailLabel>Start Date</DetailLabel><DetailValue>{formatDate(startDate)}</DetailValue></DetailItem>
-              <DetailItem><DetailLabel>Participants</DetailLabel><DetailValue>{participantCount} person(s)</DetailValue></DetailItem>
-              <DetailItem><DetailLabel>Booked On</DetailLabel><DetailValue>{formatDate(booking.createdAt)}</DetailValue></DetailItem>
+              <DetailItem>
+                <DetailLabel>Start Date</DetailLabel>
+                <DetailValue>{formatDate(startDate)}</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Participants</DetailLabel>
+                <DetailValue>{participantCount} person(s)</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Booked On</DetailLabel>
+                <DetailValue>{formatDate(booking.createdAt)}</DetailValue>
+              </DetailItem>
               <DetailItem>
                 <DetailLabel>Status</DetailLabel>
                 <DetailValue>
                   <StatusBadge $type={statusType}>
-                    {statusType === 'success' && <FiCheckCircle size={11}/>}
-                    {booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : 'Pending'}
+                    {statusType === 'success' && <FiCheckCircle size={11} />}
+                    {booking.status
+                      ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+                      : 'Pending'}
                   </StatusBadge>
                 </DetailValue>
               </DetailItem>
@@ -828,10 +892,10 @@ const BookingConfirmation = () => {
           </CardBody>
         </Card>
 
-        {/* Participants */}
+        {/* ★ Participants — using our clean styled components */}
         <Card $delay="0.2s">
           <CardHead>
-            <CardIconWrap><FiUsers size={16}/></CardIconWrap>
+            <CardIconWrap><FiUsers size={16} /></CardIconWrap>
             <CardTitle>Participants ({participantCount})</CardTitle>
           </CardHead>
           <CardBody>
@@ -840,43 +904,69 @@ const BookingConfirmation = () => {
                 {booking.participants.map((p, i) => (
                   <ParticipantCard key={p.participantId || i} $primary={p.isPrimaryBooker}>
                     {p.isPrimaryBooker && <PrimaryBadge>Primary</PrimaryBadge>}
-                    <ParticipantNum>Participant {i+1}</ParticipantNum>
-                    <ParticipantName $hasBadge={p.isPrimaryBooker}>{p.name || `Participant ${i+1}`}</ParticipantName>
-                    {p.email && <ParticipantDetail><FiUser size={12}/>{p.email}</ParticipantDetail>}
-                    {p.age && <ParticipantDetail><FiClock size={12}/>Age: {p.age}</ParticipantDetail>}
-                    {p.emergencyContact && <ParticipantDetail><FiPhone size={12}/>Emergency: {p.emergencyContact}</ParticipantDetail>}
+                    <ParticipantNum>Participant {i + 1}</ParticipantNum>
+                    <ParticipantName $hasBadge={p.isPrimaryBooker}>
+                      {p.name || `Participant ${i + 1}`}
+                    </ParticipantName>
+                    {p.email && (
+                      <ParticipantDetail>
+                        <FiUser size={12} />{p.email}
+                      </ParticipantDetail>
+                    )}
+                    {p.age && (
+                      <ParticipantDetail>
+                        <FiClock size={12} />Age: {p.age}
+                      </ParticipantDetail>
+                    )}
+                    {p.emergencyContact && (
+                      <ParticipantDetail>
+                        <FiPhone size={12} />Emergency: {p.emergencyContact}
+                      </ParticipantDetail>
+                    )}
                   </ParticipantCard>
                 ))}
               </ParticipantGrid>
             ) : (
               <DetailGrid>
-                <DetailItem><DetailLabel>Participants</DetailLabel><DetailValue>{participantCount} person(s)</DetailValue></DetailItem>
-                {booking.userName && <DetailItem><DetailLabel>Primary Booker</DetailLabel><DetailValue>{booking.userName}</DetailValue></DetailItem>}
+                <DetailItem>
+                  <DetailLabel>Participants</DetailLabel>
+                  <DetailValue>{participantCount} person(s)</DetailValue>
+                </DetailItem>
+                {booking.userName && (
+                  <DetailItem>
+                    <DetailLabel>Primary Booker</DetailLabel>
+                    <DetailValue>{booking.userName}</DetailValue>
+                  </DetailItem>
+                )}
               </DetailGrid>
             )}
           </CardBody>
         </Card>
 
-        {/* ★ Payment breakdown — uses stored amounts from BookingPage */}
+        {/* ★ Payment breakdown */}
         {fullTrekCost > 0 && (
           <Card $delay="0.25s">
             <CardHead>
-              <CardIconWrap><FiCreditCard size={16}/></CardIconWrap>
+              <CardIconWrap><FiCreditCard size={16} /></CardIconWrap>
               <CardTitle>Payment Breakdown</CardTitle>
             </CardHead>
             <CardBody>
               <SplitCard>
                 <SplitItem $paid>
                   <SplitPercent $paid>20%</SplitPercent>
-                  <SplitLabel>Paid online<br/>Booking deposit</SplitLabel>
+                  <SplitLabel>Paid online<br />Booking deposit</SplitLabel>
                   <SplitAmount $paid>₹{upfrontPaid.toLocaleString('en-IN')}</SplitAmount>
-                  <SplitStatus $paid><FiCheckCircle size={10}/>Paid via Razorpay</SplitStatus>
+                  <SplitStatus $paid>
+                    <FiCheckCircle size={10} />Paid via Razorpay
+                  </SplitStatus>
                 </SplitItem>
                 <SplitItem>
                   <SplitPercent>80%</SplitPercent>
-                  <SplitLabel>Pay to organizer<br/>On trek day</SplitLabel>
+                  <SplitLabel>Pay to organizer<br />On trek day</SplitLabel>
                   <SplitAmount>₹{remaining.toLocaleString('en-IN')}</SplitAmount>
-                  <SplitStatus><FiInfo size={10}/>Due to organizer</SplitStatus>
+                  <SplitStatus>
+                    <FiInfo size={10} />Due to organizer
+                  </SplitStatus>
                 </SplitItem>
               </SplitCard>
 
@@ -895,17 +985,25 @@ const BookingConfirmation = () => {
                 )}
                 {discountApplied > 0 && (
                   <DetailItem>
-                    <DetailLabel>Discount {couponData?.code ? `(${couponData.code})` : 'Applied'}</DetailLabel>
-                    <DetailValue style={{ color: theme.success }}>−₹{discountApplied.toLocaleString('en-IN')}</DetailValue>
+                    <DetailLabel>
+                      Discount {couponData?.code ? `(${couponData.code})` : 'Applied'}
+                    </DetailLabel>
+                    <DetailValue style={{ color: theme.success }}>
+                      −₹{discountApplied.toLocaleString('en-IN')}
+                    </DetailValue>
                   </DetailItem>
                 )}
                 <DetailItem>
                   <DetailLabel>Total Trek Cost</DetailLabel>
-                  <DetailValue style={{ fontWeight: 700 }}>₹{fullTrekCost.toLocaleString('en-IN')}</DetailValue>
+                  <DetailValue style={{ fontWeight: 700 }}>
+                    ₹{fullTrekCost.toLocaleString('en-IN')}
+                  </DetailValue>
                 </DetailItem>
                 <DetailItem>
                   <DetailLabel>Paid Online (20%)</DetailLabel>
-                  <DetailValue style={{ color: theme.success }}>₹{upfrontPaid.toLocaleString('en-IN')}</DetailValue>
+                  <DetailValue style={{ color: theme.success }}>
+                    ₹{upfrontPaid.toLocaleString('en-IN')}
+                  </DetailValue>
                 </DetailItem>
                 <DetailItem>
                   <DetailLabel>Balance to Organizer (80%)</DetailLabel>
@@ -928,14 +1026,24 @@ const BookingConfirmation = () => {
         {(booking.emergencyName || booking.emergencyContact || booking.emergencyPhone) && (
           <Card $delay="0.3s">
             <CardHead>
-              <CardIconWrap><FiPhone size={16}/></CardIconWrap>
+              <CardIconWrap><FiPhone size={16} /></CardIconWrap>
               <CardTitle>Emergency Contact</CardTitle>
             </CardHead>
             <CardBody>
               <DetailGrid>
-                {booking.emergencyName && <DetailItem><DetailLabel>Name</DetailLabel><DetailValue>{booking.emergencyName}</DetailValue></DetailItem>}
+                {booking.emergencyName && (
+                  <DetailItem>
+                    <DetailLabel>Name</DetailLabel>
+                    <DetailValue>{booking.emergencyName}</DetailValue>
+                  </DetailItem>
+                )}
                 {(booking.emergencyContact || booking.emergencyPhone) && (
-                  <DetailItem><DetailLabel>Contact Number</DetailLabel><DetailValue>{booking.emergencyContact || booking.emergencyPhone}</DetailValue></DetailItem>
+                  <DetailItem>
+                    <DetailLabel>Contact Number</DetailLabel>
+                    <DetailValue>
+                      {booking.emergencyContact || booking.emergencyPhone}
+                    </DetailValue>
+                  </DetailItem>
                 )}
               </DetailGrid>
             </CardBody>
@@ -946,24 +1054,32 @@ const BookingConfirmation = () => {
         {booking.specialRequests && (
           <Card $delay="0.32s">
             <CardHead>
-              <CardIconWrap><FiFileText size={16}/></CardIconWrap>
+              <CardIconWrap><FiFileText size={16} /></CardIconWrap>
               <CardTitle>Special Requests</CardTitle>
             </CardHead>
             <CardBody>
-              <p style={{ color: theme.textSecondary, fontSize: '0.88rem', lineHeight: 1.6, margin: 0 }}>
+              <p style={{
+                color: theme.textSecondary,
+                fontSize: '0.88rem',
+                lineHeight: 1.6,
+                margin: 0
+              }}>
                 {booking.specialRequests}
               </p>
             </CardBody>
           </Card>
         )}
 
-        {/* ★ Trust note — uses stored amounts */}
+        {/* Trust note */}
         <TrustNote>
-          <FiShield size={14} style={{ color: theme.success, flexShrink: 0, marginTop: '1px' }}/>
+          <FiShield
+            size={14}
+            style={{ color: theme.success, flexShrink: 0, marginTop: '1px' }}
+          />
           <span>
-            Your 20% deposit (₹{upfrontPaid.toLocaleString('en-IN')}) has been securely processed
-            via Razorpay. The remaining 80% (₹{remaining.toLocaleString('en-IN')}) is payable
-            directly to the trek organizer on your trek day.
+            Your 20% deposit (₹{upfrontPaid.toLocaleString('en-IN')}) has been securely
+            processed via Razorpay. The remaining 80% (₹{remaining.toLocaleString('en-IN')})
+            is payable directly to the trek organizer on your trek day.
             Total trek cost: ₹{fullTrekCost.toLocaleString('en-IN')}.
           </span>
         </TrustNote>
@@ -976,19 +1092,21 @@ const BookingConfirmation = () => {
           <ConfirmFooterInfo>
             <ConfirmFooterTitle>Booking Reference</ConfirmFooterTitle>
             <ConfirmFooterId>
-              {booking?.id?.length > 22 ? `${booking.id.substring(0, 22)}…` : booking?.id}
+              {booking?.id?.length > 22
+                ? `${booking.id.substring(0, 22)}…`
+                : booking?.id}
             </ConfirmFooterId>
             <ConfirmFooterStatus>
-              <FiCheckCircle size={11}/> Confirmed & Paid
+              <FiCheckCircle size={11} /> Confirmed & Paid
             </ConfirmFooterStatus>
           </ConfirmFooterInfo>
-          <ConfirmFooterDivider/>
+          <ConfirmFooterDivider />
           <ConfirmFooterBtns>
             <BtnConfirmSecondary onClick={() => navigate('/profile')}>
-              <FiFileText size={14}/> My Bookings
+              <FiFileText size={14} /> My Bookings
             </BtnConfirmSecondary>
             <BtnConfirmPrimary onClick={() => navigate('/explore')}>
-              Explore Treks <FiChevronRight size={15}/>
+              Explore Treks <FiChevronRight size={15} />
             </BtnConfirmPrimary>
           </ConfirmFooterBtns>
         </ConfirmFooterInner>

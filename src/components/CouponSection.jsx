@@ -403,20 +403,30 @@ const CouponSection = ({ orderTotal, onApplyCoupon }) => {
 
       const now = new Date();
 
-      if (couponData.status === 'inactive') { setError('This coupon is no longer active.'); onApplyCoupon?.(null); return; }
+      if (couponData.status === 'inactive') {
+        setError('This coupon is no longer active.');
+        onApplyCoupon?.(null);
+        return;
+      }
       if (couponData.validFrom && now < couponData.validFrom) {
         setError(`Coupon active from ${couponData.validFrom.toLocaleDateString()}.`);
-        onApplyCoupon?.(null); return;
+        onApplyCoupon?.(null);
+        return;
       }
       if (couponData.validUntil && now > couponData.validUntil) {
         setError(`This coupon expired on ${couponData.validUntil.toLocaleDateString()}.`);
-        onApplyCoupon?.(null); return;
+        onApplyCoupon?.(null);
+        return;
       }
       if (couponData.usageLimit && couponData.usageCount >= couponData.usageLimit) {
-        setError('This coupon has reached its usage limit.'); onApplyCoupon?.(null); return;
+        setError('This coupon has reached its usage limit.');
+        onApplyCoupon?.(null);
+        return;
       }
       if (couponData.minPurchase && orderTotal < couponData.minPurchase) {
-        setError(`Minimum order of ₹${couponData.minPurchase} required.`); onApplyCoupon?.(null); return;
+        setError(`Minimum order of ₹${couponData.minPurchase} required.`);
+        onApplyCoupon?.(null);
+        return;
       }
 
       let discount = couponData.discountType === 'percentage'
@@ -442,7 +452,14 @@ const CouponSection = ({ orderTotal, onApplyCoupon }) => {
     onApplyCoupon?.(null);
   };
 
-  const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+      : '';
 
   return (
     <Wrapper>
