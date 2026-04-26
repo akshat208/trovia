@@ -69,15 +69,6 @@ export const createRazorpayOrder = async (orderData) => {
     
     const bookingsRef = collection(db, 'bookings');
     
-    // DEBUG: Log incoming data
-    console.log('📞 Order data received:', {
-      contactNumber: orderData.contactNumber,
-      participants: orderData.participants,
-      totalParticipants: orderData.totalParticipants,
-      primaryBooker: orderData.primaryBooker
-    });
-    
-    // Sanitize the data
     const sanitizedOrderData = Object.keys(orderData).reduce((acc, key) => {
       if (orderData[key] !== undefined && orderData[key] !== null) {
         acc[key] = orderData[key];
@@ -85,19 +76,27 @@ export const createRazorpayOrder = async (orderData) => {
       return acc;
     }, {});
     
-    // ✅ NEW: Ensure participants array is preserved
     const requiredFields = {
       userId: sanitizedOrderData.userId || 'anonymous',
       trekName: sanitizedOrderData.trekName || 'Unknown Trek',
-      amount: sanitizedOrderData.amount || 0,
+      
+      // ★ CRITICAL: amount is the PAYMENT amount (upfront only)
+      amount: sanitizedOrderData.amount || sanitizedOrderData.paymentAmount || 0,
       currency: sanitizedOrderData.currency || 'INR',
       
-      // ✅ NEW: Participant fields
+      // ★ Store ALL pricing fields for the booking record
+      totalAmount: sanitizedOrderData.totalAmount || sanitizedOrderData.amount || 0,
+      upfrontAmount: sanitizedOrderData.upfrontAmount || sanitizedOrderData.amount || 0,
+      remainingAmount: sanitizedOrderData.remainingAmount || 0,
+      upfrontPercentage: sanitizedOrderData.upfrontPercentage || 20,
+      pricePerPerson: sanitizedOrderData.pricePerPerson || 0,
+      subtotal: sanitizedOrderData.subtotal || 0,
+      discount: sanitizedOrderData.discount || 0,
+      
       participants: sanitizedOrderData.participants || [],
       totalParticipants: sanitizedOrderData.totalParticipants || 1,
       primaryBooker: sanitizedOrderData.primaryBooker || {},
       
-      // Preserve all other fields
       ...(sanitizedOrderData.contactNumber && { contactNumber: sanitizedOrderData.contactNumber }),
       ...(sanitizedOrderData.phoneNumber && { phoneNumber: sanitizedOrderData.phoneNumber }),
       ...(sanitizedOrderData.phone && { phone: sanitizedOrderData.phone }),
@@ -105,9 +104,6 @@ export const createRazorpayOrder = async (orderData) => {
       ...(sanitizedOrderData.email && { email: sanitizedOrderData.email }),
       ...(sanitizedOrderData.startDate && { startDate: sanitizedOrderData.startDate }),
       ...(sanitizedOrderData.specialRequests && { specialRequests: sanitizedOrderData.specialRequests }),
-      ...(sanitizedOrderData.pricePerPerson && { pricePerPerson: sanitizedOrderData.pricePerPerson }),
-      ...(sanitizedOrderData.subtotal && { subtotal: sanitizedOrderData.subtotal }),
-      ...(sanitizedOrderData.discount && { discount: sanitizedOrderData.discount }),
       ...(sanitizedOrderData.coupon && { coupon: sanitizedOrderData.coupon }),
     };
     
@@ -120,24 +116,20 @@ export const createRazorpayOrder = async (orderData) => {
       updatedAt: serverTimestamp()
     };
     
-    // DEBUG: Log what's being saved
-    console.log('📞 Booking data being saved to Firestore:', {
-      totalParticipants: bookingData.totalParticipants,
-      participantsCount: bookingData.participants?.length,
-      primaryBooker: bookingData.primaryBooker?.name,
-      allParticipantNames: bookingData.participants?.map(p => p.name)
-    });
+    console.log('💳 Booking data — amount to charge:', bookingData.amount);
+    console.log('💳 Booking data — total trek cost:', bookingData.totalAmount);
+    console.log('💳 Booking data — upfront:', bookingData.upfrontAmount);
+    console.log('💳 Booking data — remaining:', bookingData.remainingAmount);
     
     const bookingDoc = await addDoc(bookingsRef, bookingData);
     console.log('✅ Booking created with ID:', bookingDoc.id);
     
-    // Store the booking ID globally
     window.lastRazorpayBookingId = bookingDoc.id;
     
     return {
       bookingId: bookingDoc.id,
       ...bookingData,
-      amount: orderData.amount * 100, // Convert to paise
+      amount: orderData.amount * 100,         // ★ Convert to paise for Razorpay
     };
   } catch (error) {
     console.error('❌ Error creating Razorpay order:', error);

@@ -21,40 +21,60 @@ export const processPayment = async (trekData, bookingDetails) => {
     console.log('Trek Data:', trekData);
     console.log('Booking Details:', bookingDetails);
     
-    // Debug Razorpay integration
     const debugInfo = debugRazorpayIntegration();
     if (!debugInfo.isRazorpayLoaded) {
       console.log('🔄 Razorpay not loaded, attempting to load...');
-      
-      // Attempt to load Razorpay script
       const isRazorpayLoaded = await loadRazorpayScript();
       if (!isRazorpayLoaded) {
         throw new Error('Failed to load Razorpay SDK. Please check your internet connection and try again.');
       }
     }
 
-    // Validate key existence
     if (!process.env.REACT_APP_RAZORPAY_KEY_ID) {
       console.error('❌ Razorpay Key ID is missing');
-      throw new Error('Payment configuration error: API key not found. Please check your .env file.');
+      throw new Error('Payment configuration error: API key not found.');
     }
 
-    // Get current user (or allow anonymous for testing)
     const user = auth.currentUser;
     const userId = user ? user.uid : 'anonymous-user';
     
-    console.log('👤 User:', user ? `${user.displayName || user.email} (${user.uid})` : 'Anonymous');
-    
-    // Create order data with proper validation and preserve all participant data
+    // ★ CRITICAL: Determine the PAYMENT amount (what Razorpay charges)
+    // Priority: explicit paymentAmount > amount > calculated from numericPrice
+    const paymentAmount = (() => {
+      // 1. Explicit payment amount passed from BookingPage
+      if (bookingDetails.paymentAmount && bookingDetails.paymentAmount > 0) {
+        console.log('💰 Using explicit paymentAmount:', bookingDetails.paymentAmount);
+        return parseInt(bookingDetails.paymentAmount);
+      }
+      // 2. Explicit amount field
+      if (bookingDetails.amount && bookingDetails.amount > 0) {
+        console.log('💰 Using explicit amount:', bookingDetails.amount);
+        return parseInt(bookingDetails.amount);
+      }
+      // 3. Calculate from trek numericPrice × participants
+      const calculated = parseInt((trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1));
+      console.log('💰 Calculated from numericPrice:', calculated);
+      return calculated;
+    })();
+
+    // ★ Determine the ACTUAL total trek cost (for records, not for charging)
+    const actualTotalAmount = bookingDetails.actualTotalAmount 
+      || bookingDetails.totalAmount 
+      || paymentAmount;
+
+    console.log('💰 Payment breakdown:', {
+      paymentAmount_chargedNow: paymentAmount,
+      actualTotalAmount_forRecords: actualTotalAmount,
+      upfrontAmount: bookingDetails.upfrontAmount || bookingDetails.actualUpfrontAmount,
+      remainingAmount: bookingDetails.remainingAmount || bookingDetails.actualRemainingAmount,
+    });
+
     const orderData = {
       userId: userId,
-      
-      // ✅ Include participant data
       primaryBooker: bookingDetails.primaryBooker || {},
       participants: bookingDetails.participants || [],
       totalParticipants: bookingDetails.totalParticipants || 1,
       
-      // Include coupon data if available
       coupon: bookingDetails.coupon ? {
         id: bookingDetails.coupon.id,
         code: bookingDetails.coupon.code,
@@ -62,18 +82,14 @@ export const processPayment = async (trekData, bookingDetails) => {
         discountType: bookingDetails.coupon.discountType
       } : null,
       
-      // User information - preserve original field names AND add alternatives
       userEmail: user ? user.email : (bookingDetails.primaryBooker?.email || bookingDetails.email || 'anonymous@example.com'),
       email: bookingDetails.primaryBooker?.email || bookingDetails.email || (user ? user.email : 'anonymous@example.com'),
-      
       userName: user ? (user.displayName || bookingDetails.primaryBooker?.name || bookingDetails.name || 'Guest User') : (bookingDetails.primaryBooker?.name || bookingDetails.name || 'Guest User'),
       name: bookingDetails.primaryBooker?.name || bookingDetails.name || (user ? user.displayName : 'Guest User'),
-      
       contactNumber: bookingDetails.primaryBooker?.contactNumber || bookingDetails.contactNumber || '',
       phoneNumber: bookingDetails.primaryBooker?.contactNumber || bookingDetails.contactNumber || '',
       phone: bookingDetails.primaryBooker?.contactNumber || bookingDetails.contactNumber || '',
       
-      // Trek information
       trekId: trekData?.id || 'unknown-trek',
       trekName: trekData?.name || trekData?.title || 'Unknown Trek',
       trekTitle: trekData?.title || trekData?.name || 'Unknown Trek',
@@ -82,58 +98,62 @@ export const processPayment = async (trekData, bookingDetails) => {
       trekDifficulty: trekData?.difficulty || '',
       trekImage: trekData?.image || trekData?.imageUrl || '',
       
-      // Booking details
       startDate: bookingDetails?.startDate || new Date().toISOString().split('T')[0],
       specialRequests: bookingDetails?.specialRequests || '',
       
-      // Pricing
-      pricePerPerson: trekData?.numericPrice || 100,
-      subtotal: bookingDetails.subtotal || (trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1),
+      // ★ Pricing — store REAL amounts in booking record
+      pricePerPerson: bookingDetails.pricePerPerson || trekData?.numericPrice || 100,
+      subtotal: bookingDetails.subtotal || (bookingDetails.pricePerPerson || trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1),
       discount: bookingDetails.discount || 0,
       
-      // Calculate amount based on participants and apply discount if coupon is present
-      amount: bookingDetails.totalAmount || (bookingDetails.coupon ? 
-        parseInt(bookingDetails.coupon.finalAmount) :
-        parseInt((trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1))),
-      originalAmount: bookingDetails.coupon ?
-        parseInt(bookingDetails.coupon.originalAmount) :
-        parseInt((trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1)),
-      totalAmount: bookingDetails.totalAmount || (bookingDetails.coupon ? 
-        parseInt(bookingDetails.coupon.finalAmount) :
-        parseInt((trekData?.numericPrice || 100) * (bookingDetails?.totalParticipants || 1))),
+      // ★ Store the ACTUAL full trek cost (not the payment amount)
+      totalAmount: bookingDetails.actualTotalAmount || bookingDetails.totalAmount || paymentAmount,
+      
+      // ★ Store the split amounts
+      upfrontAmount: bookingDetails.actualUpfrontAmount || bookingDetails.upfrontAmount || paymentAmount,
+      remainingAmount: bookingDetails.actualRemainingAmount || bookingDetails.remainingAmount || 0,
+      upfrontPercentage: bookingDetails.upfrontPercentage || 20,
+      
+      // ★ This is what Razorpay actually charges
+      amount: paymentAmount,
+      paymentAmount: paymentAmount,
+      
+      // Original amounts for reference
+      originalAmount: bookingDetails.actualTotalAmount || bookingDetails.totalAmount || paymentAmount,
       
       currency: 'INR',
       bookingDate: new Date().toISOString()
     };
 
-    // Ensure amount is valid (minimum 100 paise = ₹1)
     if (orderData.amount < 1) {
       console.warn('⚠️ Invalid amount, setting to minimum ₹100');
       orderData.amount = 100;
     }
     
-    // Validate data before sending to Firestore
     const { fixedData } = validateFirestoreData(orderData);
     
-    console.log('💾 Creating order with data:', fixedData);
-    console.log('👥 Participants:', fixedData.participants);
-    console.log('📊 Total participants:', fixedData.totalParticipants);
+    console.log('💾 Creating order — Razorpay will charge:', fixedData.amount);
+    console.log('💾 Total trek cost stored:', fixedData.totalAmount);
+    console.log('💾 Upfront stored:', fixedData.upfrontAmount);
+    console.log('💾 Remaining stored:', fixedData.remainingAmount);
     
-    // Create a local booking record first
     const order = await createRazorpayOrder(fixedData);
     console.log('📝 Order created:', order);
     
-    // Configure Razorpay options
+    // ★ Razorpay options — amount in paise
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-      amount: parseInt(order.amount),
+      amount: parseInt(order.amount),         // ★ This is already in paise (upfront × 100)
       currency: "INR",
       name: 'Trovia Treks',
-      description: `Booking for ${orderData.trekName} - ${orderData.totalParticipants} participant(s)`,
+      description: `Booking deposit (20%) for ${orderData.trekName} - ${orderData.totalParticipants} participant(s)`,
       notes: {
         bookingId: order.bookingId,
         trekId: orderData.trekId,
-        totalParticipants: orderData.totalParticipants
+        totalParticipants: orderData.totalParticipants,
+        totalTrekCost: orderData.totalAmount,
+        upfrontAmount: orderData.upfrontAmount,
+        paymentType: '20_percent_deposit',
       },
       prefill: {
         name: orderData.userName,
@@ -141,17 +161,16 @@ export const processPayment = async (trekData, bookingDetails) => {
         contact: orderData.contactNumber || ''
       },
       theme: {
-        color: '#3399cc'
+        color: '#f97316'
       }
     };
     
-    console.log('🚀 Initializing Razorpay payment with options:', options);
+    console.log('🚀 Razorpay modal amount (paise):', options.amount);
+    console.log('🚀 Razorpay modal amount (₹):', options.amount / 100);
     console.groupEnd();
 
-    // Initialize payment
     await initializeRazorpayPayment(options);
 
-    // Return the order details
     return {
       orderId: order.bookingId,
       amount: order.amount,

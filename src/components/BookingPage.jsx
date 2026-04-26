@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { FiX, FiCalendar, FiUser, FiPhone, FiMessageSquare, FiCreditCard, FiCheck, FiAlertCircle, FiInfo, FiArrowLeft } from 'react-icons/fi';
+import { FiX, FiCalendar, FiUser, FiPhone, FiMessageSquare, FiCreditCard, FiCheck, FiAlertCircle, FiInfo, FiArrowLeft, FiChevronLeft, FiChevronRight, FiShield, FiLock } from 'react-icons/fi';
 import { processBookingPayment, completeBookingPayment, handleBookingPaymentFailure } from '../utils/bookingService';
 import { loadRazorpayScript } from '../services/payment/razorpay';
 import { auth, db } from '../firebase';
@@ -12,1525 +12,511 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 // ============================================
-// ANIMATIONS (Same as your BookingModal)
+// ANIMATIONS
 // ============================================
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 `;
-
 const scaleIn = keyframes`
-  from { opacity: 0; transform: scale(0.8) translateY(40px); }
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 `;
-
-const slideInFromLeft = keyframes`
-  from { opacity: 0; transform: translateX(-30px); }
+const imageFloat = keyframes`
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-12px) rotate(-1deg); }
+`;
+const mobileImageWave = keyframes`
+  0%, 100% { transform: translateX(-8px) translateY(0px) rotate(-2deg); }
+  25% { transform: translateX(-2px) translateY(-3px) rotate(-1deg); }
+  50% { transform: translateX(8px) translateY(-1px) rotate(2deg); }
+  75% { transform: translateX(2px) translateY(-4px) rotate(1deg); }
+`;
+const imageEntrance = keyframes`
+  0% { opacity: 0; transform: translateY(40px) rotate(-8deg) scale(0.85); filter: blur(6px); }
+  60% { opacity: 0.9; filter: blur(1px); }
+  100% { opacity: 1; transform: translateY(0px) rotate(-3deg) scale(1); filter: blur(0px); }
+`;
+const mobileImageEntrance = keyframes`
+  0% { opacity: 0; transform: translateY(20px) scale(0.9); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0px) scale(1); filter: blur(0px); }
+`;
+const panelSlideIn = keyframes`
+  from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 `;
-
-const slideInFromRight = keyframes`
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-`;
-
 const shimmer = keyframes`
   0% { background-position: -200px 0; }
   100% { background-position: calc(200px + 100%) 0; }
 `;
-
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 `;
-
 const bounceIn = keyframes`
   0% { opacity: 0; transform: scale(0.3); }
   50% { opacity: 1; transform: scale(1.05); }
   70% { transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
 `;
-
-const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+const pulse = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 `;
-
 const successPulse = keyframes`
-  0%, 100% { 
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-  }
-  50% { 
-    transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-  }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
 `;
-
-const checkDraw = keyframes`
-  0% { stroke-dashoffset: 100; }
-  100% { stroke-dashoffset: 0; }
-`;
-
 const confetti = keyframes`
   0% { transform: translateY(0px) rotate(0deg); opacity: 1; }
   100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
 `;
-
-const slideInUp = keyframes`
-  from { opacity: 0; transform: translateY(50px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
 const gradientShift = keyframes`
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+`;
+const slideInUp = keyframes`
+  from { opacity: 0; transform: translateY(50px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
 // ============================================
 // THEME
 // ============================================
 const theme = {
-  primary: '#a53d1e',
-  primaryDark: '#ed4c1b',
-  primaryLight: '#FFAB91',
-  secondary: '#12182f',
-  accent: '#ff6b4d',
+  primary: '#FF6B35',
+  primaryDark: '#E85D2F',
+  primaryLight: '#FFB399',
+  primaryGlow: 'rgba(255, 107, 53, 0.25)',
+  secondary: '#1a1d23',
+  secondaryLight: '#24272e',
+  accent: '#FF9A6C',
   success: '#4eab53',
   white: '#FFFFFF',
   cream: '#FFF8F0',
-  peach: '#FFE4D6',
+  peach: '#FFE9DC',
   lightGray: '#F5F5F5',
-  mediumGray: '#E0E0E0',
-  darkGray: '#546E7A',
-  text: '#263238',
+  mediumGray: '#3a3d44',
+  darkGray: '#8a8f9a',
+  text: '#ffffff',
+  textLight: '#9ca0ab',
+  textDark: '#e8e9ec',
+  cardBg: '#22252c',
+  cardBgLight: '#2a2d35',
+  inputBg: '#2a2d35',
+  inputBorder: '#3a3d44',
+  borderLight: '#333640',
 };
 
-// ADD THESE after your existing styled components
+// ============================================
+// CALENDAR
+// ============================================
 const CalendarWrapper = styled.div`
   .react-datepicker {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Sora', 'Inter', sans-serif;
     border: none;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     width: 100%;
-    background: white;
+    background: ${theme.cardBg};
   }
-
-  .react-datepicker__month-container {
-    width: 100%;
-    float: none;
-  }
-
-  .react-datepicker__header {
-    background: linear-gradient(135deg, ${theme.secondary} 0%, #455A64 100%);
-    border-bottom: none;
-    padding: 1rem 1rem 0.75rem;
-    border-radius: 0;
-  }
-
-  .react-datepicker__current-month {
-    color: white;
-    font-size: 1rem;
-    font-weight: 700;
-    font-family: 'Inter', sans-serif;
-    margin-bottom: 0.5rem;
-  }
-
-  .react-datepicker__navigation {
-    top: 1rem;
-  }
-
-  .react-datepicker__navigation-icon::before {
-    border-color: white;
-  }
-
-  .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
-    border-color: ${theme.primaryLight};
-  }
-
-  .react-datepicker__day-names {
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0;
-    padding: 0.25rem 0;
-    display: flex;
-    justify-content: space-around;
-  }
-
-  .react-datepicker__day-name {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.75rem;
-    font-weight: 600;
-    width: 2.2rem;
-    line-height: 1.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .react-datepicker__month {
-    margin: 0;
-    padding: 0.75rem;
-    background: white;
-  }
-
-  .react-datepicker__week {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 0.25rem;
-  }
-
-  .react-datepicker__day {
-    width: 2.2rem;
-    height: 2.2rem;
-    line-height: 2.2rem;
-    border-radius: 50%;
-    font-size: 0.875rem;
-    font-weight: 500;
-    font-family: 'Inter', sans-serif;
-    color: ${theme.text};
-    transition: all 0.2s ease;
-    position: relative;
-    margin: 0.1rem;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: ${theme.peach};
-      border-radius: 50%;
-      color: ${theme.primary};
-    }
-  }
-
-  .react-datepicker__day--selected {
-    background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%) !important;
-    color: white !important;
-    border-radius: 50% !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 12px rgba(165, 61, 30, 0.4) !important;
-
-    &:hover {
-      background: ${theme.primaryDark} !important;
-    }
-  }
-
-  .react-datepicker__day--today {
-    font-weight: 700;
-    border: 2px solid ${theme.primary};
-    border-radius: 50%;
-    color: ${theme.primary};
-  }
-
-  .react-datepicker__day--disabled {
-    color: #ccc !important;
-    cursor: not-allowed !important;
-
-    &:hover {
-      background: transparent !important;
-      color: #ccc !important;
-    }
-  }
-
-  .react-datepicker__day--keyboard-selected {
-    background: ${theme.peach};
-    border-radius: 50%;
-    color: ${theme.primary};
-  }
+  .react-datepicker__month-container { width: 100%; float: none; }
+  .react-datepicker__header { background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%); border-bottom: none; padding: 1rem 1rem 0.75rem; }
+  .react-datepicker__current-month { color: white; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .react-datepicker__navigation { top: 1rem; }
+  .react-datepicker__navigation-icon::before { border-color: white; }
+  .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before { border-color: rgba(255,255,255,0.7); }
+  .react-datepicker__day-names { background: rgba(255,255,255,0.15); margin: 0; padding: 0.25rem 0; display: flex; justify-content: space-around; }
+  .react-datepicker__day-name { color: rgba(255,255,255,0.9); font-size: 0.75rem; font-weight: 600; width: 2.2rem; line-height: 1.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .react-datepicker__month { margin: 0; padding: 0.75rem; background: ${theme.cardBg}; }
+  .react-datepicker__week { display: flex; justify-content: space-around; margin-bottom: 0.25rem; }
+  .react-datepicker__day { width: 2.2rem; height: 2.2rem; line-height: 2.2rem; border-radius: 50%; font-size: 0.875rem; font-weight: 500; color: ${theme.textDark}; transition: all 0.2s ease; position: relative; margin: 0.1rem; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; &:hover { background: rgba(255, 107, 53, 0.2); border-radius: 50%; color: ${theme.primary}; } }
+  .react-datepicker__day--selected { background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%) !important; color: white !important; border-radius: 50% !important; font-weight: 700 !important; box-shadow: 0 4px 12px ${theme.primaryGlow} !important; &:hover { background: ${theme.primaryDark} !important; } }
+  .react-datepicker__day--today { font-weight: 700; border: 2px solid ${theme.primary}; border-radius: 50%; color: ${theme.primary}; }
+  .react-datepicker__day--disabled { color: #555 !important; cursor: not-allowed !important; &:hover { background: transparent !important; color: #555 !important; } }
+  .react-datepicker__day--keyboard-selected { background: rgba(255, 107, 53, 0.15); border-radius: 50%; color: ${theme.primary}; }
+  @media (max-width: 480px) { .react-datepicker__day-name, .react-datepicker__day { width: 2rem; height: 2rem; line-height: 2rem; font-size: 0.8rem; } }
 `;
 
-const DayWithDot = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  gap: 1px;
-`;
-
-const DayNumber = styled.span`
-  line-height: 1;
-  font-size: 0.875rem;
-`;
-
-const DayDot = styled.span`
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: ${props => props.available ? '#4CAF50' : '#EF5350'};
-  display: block;
-  flex-shrink: 0;
-`;
+const DayWithDot = styled.div`display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 1px;`;
+const DayNumber = styled.span`line-height: 1; font-size: 0.875rem;`;
+const DayDot = styled.span`width: 5px; height: 5px; border-radius: 50%; background: ${props => props.available ? '#4CAF50' : '#EF5350'}; display: block; flex-shrink: 0;`;
 
 // ============================================
-// STYLED COMPONENTS - PAGE LAYOUT
+// PAGE LAYOUT
 // ============================================
-const PageContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, ${theme.cream} 0%, ${theme.white} 50%, ${theme.peach} 100%);
-  padding: 0;
-`;
-
-const TopBar = styled.div`
-  background: linear-gradient(135deg, ${theme.secondary} 0%, #455A64 100%);
-  padding: 1rem 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, ${theme.primary}, ${theme.accent});
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.85rem 1rem;
-  }
-`;
-
-const BackButton = styled.button`
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  font-size: 1.2rem;
-  color: ${theme.white};
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+const PageWrapper = styled.div`
+  min-height: 100dvh;
+  background: #0f1114;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    background: ${theme.primary};
-    border-color: ${theme.primary};
-    transform: scale(1.1);
-    box-shadow: 0 8px 25px rgba(255, 112, 67, 0.4);
-  }
-`;
-
-const PageTitle = styled.h1`
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: ${theme.white};
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.025em;
-
-  span {
-    background: linear-gradient(135deg, ${theme.primaryLight} 0%, ${theme.accent} 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.3rem;
-  }
-`;
-
-const ContentContainer = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem;
-  animation: ${fadeIn} 0.5s ease-out;
-
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 1rem;
-  }
-`;
-
-// ============================================
-// ALL YOUR EXISTING STYLED COMPONENTS (from BookingModal)
-// ============================================
-
-const StepIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  animation: ${fadeIn} 0.6s ease-out 0.1s both;
-`;
-
-const Step = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: ${props => props.active ? theme.primary : theme.darkGray};
-`;
-
-const StepNumber = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${props => props.active 
-    ? `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)` 
-    : props.completed 
-      ? `linear-gradient(135deg, ${theme.success} 0%, #43A047 100%)`
-      : theme.lightGray};
-  color: ${props => (props.active || props.completed) ? 'white' : theme.darkGray};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
-  box-shadow: ${props => props.active ? '0 4px 12px rgba(255, 112, 67, 0.35)' : 'none'};
-`;
-
-const StepConnector = styled.div`
-  width: 40px;
-  height: 2px;
-  background: ${props => props.completed 
-    ? `linear-gradient(90deg, ${theme.success}, #43A047)` 
-    : theme.mediumGray};
-  transition: all 0.3s ease;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  animation: ${fadeIn} 0.6s ease-out 0.3s both;
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  padding: 1.5rem;
   position: relative;
+  overflow: hidden;
+  margin-bottom: calc(-90px - env(safe-area-inset-bottom));
+  @media (max-width: 768px) { margin-bottom: calc(-75px - env(safe-area-inset-bottom)); }
+  @media (max-width: 480px) { padding: 0; align-items: flex-start; height: 100dvh; overflow: hidden; margin-bottom: calc(-70px - env(safe-area-inset-bottom)); }
+  @media (max-height: 600px) { margin-bottom: calc(-65px - env(safe-area-inset-bottom)); }
 `;
 
-const Label = styled.label`
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: ${theme.secondary};
+const BookingCard = styled.div`
+  width: 100%;
+  max-width: 1080px;
+  height: 88vh;
+  max-height: 820px;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  animation: ${scaleIn} 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  @media (max-width: 900px) { display: flex; flex-direction: column; height: 100dvh; min-height: 100dvh; max-height: 100dvh; max-width: 100%; border-radius: 0; box-shadow: none; animation: none; }
+`;
+
+const OrangePanel = styled.div`
+  background: linear-gradient(165deg, #FF8C42 0%, #FF6B35 35%, #E85D2F 70%, #D4502A 100%);
+  position: relative;
+  overflow: visible;
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  svg { color: ${theme.primary}; font-size: 1rem; }
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem 2rem 2.5rem;
+  z-index: 1;
+  min-height: 100%;
+  &::before { content: ''; position: absolute; top: -20%; right: -30%; width: 140%; height: 70%; background: rgba(255, 255, 255, 0.06); border-radius: 0 0 50% 50%; transform: rotate(-8deg); pointer-events: none; }
+  &::after { content: ''; position: absolute; bottom: -5%; left: -20%; width: 140%; height: 40%; background: rgba(0, 0, 0, 0.08); border-radius: 50% 50% 0 0; pointer-events: none; }
+  @media (max-width: 900px) { min-height: 250px; height: 250px; flex-shrink: 0; padding: 1rem 1rem 2.2rem; justify-content: space-between; overflow: hidden; &::before { top: -35%; right: -35%; width: 150%; height: 90%; transform: rotate(-6deg); } &::after { display: none; } }
+  @media (max-width: 480px) { min-height: 225px; height: 225px; padding: 0.9rem 0.9rem 2rem; }
 `;
 
+const FloatingCircle = styled.div`
+  position: absolute; border-radius: 50%; background: rgba(255, 255, 255, ${props => props.opacity || '0.08'}); width: ${props => props.size || '120px'}; height: ${props => props.size || '120px'}; top: ${props => props.top || 'auto'}; left: ${props => props.left || 'auto'}; right: ${props => props.right || 'auto'}; bottom: ${props => props.bottom || 'auto'}; pointer-events: none;
+  @media (max-width: 900px) { width: ${props => `calc(${props.size || '120px'} * 0.5)`}; height: ${props => `calc(${props.size || '120px'} * 0.5)`}; }
+`;
+
+const CurvedDivider = styled.div`
+  position: absolute; right: -10px; top: 0; height: 100%; width: 90px; z-index: 15; pointer-events: none;
+  svg { height: 100%; width: 100%; display: block; }
+  .desktop-curve { display: block; }
+  .mobile-curve { display: none; }
+  @media (max-width: 900px) { right: 0; top: auto; bottom: -1px; left: 0; width: 100%; height: 40px; .desktop-curve { display: none; } .mobile-curve { display: block; width: 100%; height: 100%; } }
+  @media (max-width: 480px) { height: 34px; }
+`;
+
+const FloatingImageContainer = styled.div`
+  position: relative; display: flex; justify-content: center; align-items: center; flex: 1; z-index: 10; padding: 1rem; min-height: 0; overflow: visible; animation: ${imageEntrance} 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+  @media (max-width: 900px) { flex: 1; padding: 0.25rem 0 0; animation: ${mobileImageEntrance} 0.6s ease-out 0.2s both; }
+`;
+
+const TrekImageCard = styled.div`
+  width: 390px; height: 360px; border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15); position: relative; flex-shrink: 0; animation: ${imageFloat} 3s ease-in-out infinite;
+  img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  &::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.5) 100%); pointer-events: none; }
+  @media (max-width: 900px) { width: 118px; height: 118px; border-radius: 18px; animation: ${mobileImageWave} 3.2s ease-in-out infinite; transform-origin: center center; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255,255,255,0.12); &::after { background: linear-gradient(to bottom, transparent 58%, rgba(0, 0, 0, 0.28) 100%); } }
+  @media (max-width: 480px) { width: 100px; height: 100px; border-radius: 16px; }
+`;
+
+const ImageBadge = styled.div`
+  position: absolute; bottom: 1.25rem; left: 1.25rem; right: 1.25rem; z-index: 2; color: white;
+  h3 { margin: 0 0 0.2rem; font-size: 1.05rem; font-weight: 700; font-family: 'Sora', sans-serif; text-shadow: 0 2px 12px rgba(0,0,0,0.6); line-height: 1.25; }
+  p { margin: 0; font-size: 0.78rem; opacity: 0.9; display: flex; align-items: center; gap: 0.3rem; }
+  @media (max-width: 900px) { display: none; }
+`;
+
+const OrangePanelInfo = styled.div`position: relative; z-index: 5; flex-shrink: 0; @media (max-width: 900px) { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }`;
+const PanelTrekName = styled.h2`font-family: 'Sora', sans-serif; font-size: 1.3rem; font-weight: 700; color: white; margin: 0 0 0.35rem; line-height: 1.3; text-shadow: 0 2px 8px rgba(0,0,0,0.15); @media (max-width: 900px) { font-size: 0.98rem; margin: 0 0 0.15rem; max-width: 90%; } @media (max-width: 480px) { font-size: 0.88rem; }`;
+const PanelLocation = styled.p`font-size: 0.85rem; color: rgba(255,255,255,0.85); margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.3rem; @media (max-width: 900px) { font-size: 0.72rem; margin: 0 0 0.45rem; justify-content: center; } @media (max-width: 480px) { font-size: 0.68rem; }`;
+const PriceTag = styled.div`
+  display: inline-flex; align-items: baseline; gap: 0.25rem; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(10px); padding: 0.6rem 1.15rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.15);
+  .currency { font-size: 0.85rem; color: rgba(255,255,255,0.85); font-weight: 600; }
+  .amount { font-size: 1.5rem; font-weight: 800; color: white; font-family: 'Sora', sans-serif; }
+  .suffix { font-size: 0.75rem; color: rgba(255,255,255,0.7); }
+  @media (max-width: 900px) { padding: 0.28rem 0.7rem; .amount { font-size: 1rem; } .currency { font-size: 0.7rem; } .suffix { font-size: 0.62rem; } }
+  @media (max-width: 480px) { padding: 0.25rem 0.6rem; .amount { font-size: 0.92rem; } }
+`;
+
+const DarkFormPanel = styled.div`
+  background: ${theme.secondary}; display: flex; flex-direction: column; overflow-y: auto; max-height: 100%; position: relative; min-height: 0;
+  &::-webkit-scrollbar { width: 4px; } &::-webkit-scrollbar-track { background: transparent; } &::-webkit-scrollbar-thumb { background: ${theme.mediumGray}; border-radius: 4px; }
+  @media (max-width: 900px) { flex: 1; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch; border-top-left-radius: 20px; border-top-right-radius: 20px; margin-top: -1px; }
+`;
+
+const PanelHeader = styled.div`
+  padding: 1.75rem 2rem 0; position: sticky; top: 0; background: ${theme.secondary}; z-index: 10; border-bottom: 1px solid ${theme.borderLight}; padding-bottom: 1rem;
+  @media (max-width: 900px) { padding: 1.25rem 1.25rem 0; padding-bottom: 0.75rem; }
+  @media (max-width: 480px) { padding: 1rem 1rem 0; padding-bottom: 0.65rem; }
+`;
+
+const HeaderTop = styled.div`display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; @media (max-width: 900px) { margin-bottom: 1rem; gap: 0.6rem; }`;
+const BackBtn = styled.button`width: 36px; height: 36px; border-radius: 50%; background: ${theme.cardBg}; border: 1px solid ${theme.borderLight}; cursor: pointer; display: flex; align-items: center; justify-content: center; color: ${theme.textDark}; font-size: 1rem; transition: all 0.2s; flex-shrink: 0; &:hover { background: ${theme.primary}; border-color: ${theme.primary}; color: white; transform: scale(1.08); } @media (max-width: 480px) { width: 32px; height: 32px; font-size: 0.9rem; }`;
+const HeaderTitle = styled.h1`font-family: 'Sora', sans-serif; font-size: 1.2rem; font-weight: 700; color: ${theme.textDark}; margin: 0; span { color: ${theme.primary}; } @media (max-width: 480px) { font-size: 1.05rem; }`;
+
+const StepTrack = styled.div`
+  display: flex; align-items: center; gap: 0;
+  @media (max-width: 480px) { justify-content: center; transform: scale(0.85); transform-origin: center center; margin: -4px 0 -8px 0; }
+  @media (max-width: 360px) { transform: scale(0.75); margin: -6px 0 -10px 0; }
+`;
+const StepItem = styled.div`display: flex; flex-direction: column; align-items: center; gap: 0.3rem; position: relative;`;
+const StepDot = styled.div`
+  width: ${props => props.active ? '14px' : '10px'}; height: ${props => props.active ? '14px' : '10px'}; border-radius: 50%;
+  background: ${props => props.completed ? theme.success : props.active ? theme.primary : theme.mediumGray};
+  border: ${props => props.active ? `3px solid rgba(255, 107, 53, 0.3)` : '2px solid transparent'};
+  transition: all 0.3s ease; box-shadow: ${props => props.active ? `0 0 0 3px ${theme.primaryGlow}` : 'none'};
+  @media (max-width: 480px) { transform: translateY(-6px); }
+`;
+const StepLine = styled.div`
+  width: 60px; height: 2px;
+  background: ${props => props.completed ? `linear-gradient(90deg, ${theme.success}, ${theme.success})` : theme.mediumGray};
+  transition: all 0.4s ease; margin: 0 0.3rem;
+  @media (max-width: 900px) { width: 50px; }
+  @media (max-width: 480px) { width: 35px; transform: translateY(-6px); }
+  @media (max-width: 360px) { width: 25px; }
+`;
+const StepLabel = styled.span`
+  font-size: 0.68rem; font-weight: ${props => props.active ? '700' : '500'};
+  color: ${props => props.active ? theme.primary : props.completed ? theme.success : theme.textLight};
+  white-space: nowrap; position: absolute; top: 22px; font-family: 'Sora', sans-serif;
+  @media (max-width: 480px) { font-size: 0.6rem; }
+`;
+
+const PanelBody = styled.div`
+  padding: 1.5rem 2rem; flex: 1; display: flex; flex-direction: column; gap: 1.25rem; animation: ${panelSlideIn} 0.4s ease-out;
+  @media (max-width: 900px) { padding: 1.25rem; }
+  @media (max-width: 480px) { padding: 1rem; gap: 1rem; }
+`;
+
+const PanelFooter = styled.div`
+  padding: 1rem 2rem 1em; background: ${theme.secondary}; border-top: 1px solid ${theme.borderLight}; display: flex; justify-content: space-between; align-items: center; gap: 1rem; position: sticky; bottom: 0; z-index: 10;
+  @media (max-width: 900px) { padding: 1rem 1.25rem 1.25rem; }
+  @media (max-width: 480px) { padding: 0.85rem 1rem 1rem; flex-direction: column-reverse; gap: 0.75rem; }
+`;
+
+// ============================================
+// FORM COMPONENTS
+// ============================================
+const Form = styled.form`display: flex; flex-direction: column; gap: 1.25rem; @media (max-width: 480px) { gap: 1rem; }`;
+const FormGroup = styled.div`display: flex; flex-direction: column; gap: 0.5rem; position: relative;`;
+const Label = styled.label`font-weight: 600; font-size: 0.82rem; color: ${theme.textLight}; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Sora', sans-serif; svg { color: ${theme.primary}; font-size: 0.9rem; } @media (max-width: 480px) { font-size: 0.75rem; }`;
 const Input = styled.input`
-  padding: 0.9rem 1.1rem;
-  border: 2px solid ${theme.mediumGray};
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-  background: ${theme.white};
-  color: ${theme.text};
-  &::placeholder { color: #9E9E9E; font-weight: 400; }
-  &:focus {
-    border-color: ${theme.primary};
-    box-shadow: 0 0 0 3px rgba(255, 112, 67, 0.12), 0 2px 8px rgba(255, 112, 67, 0.15);
-  }
-  &:hover:not(:focus):not(:disabled) { border-color: ${theme.primaryLight}; }
-  &:disabled { background: ${theme.lightGray}; color: ${theme.darkGray}; }
+  padding: 0.8rem 1rem; border: 1.5px solid ${theme.inputBorder}; border-radius: 10px; font-size: 0.9rem; font-weight: 500; transition: all 0.25s ease; outline: none; background: ${theme.inputBg}; color: ${theme.textDark}; font-family: 'Sora', 'Inter', sans-serif;
+  &::placeholder { color: #5a5e6a; font-weight: 400; }
+  &:focus { border-color: ${theme.primary}; box-shadow: 0 0 0 3px ${theme.primaryGlow}; }
+  &:hover:not(:focus):not(:disabled) { border-color: rgba(255, 107, 53, 0.4); }
+  &:disabled { background: ${theme.cardBg}; color: ${theme.darkGray}; opacity: 0.6; }
+  @media (max-width: 480px) { padding: 0.7rem 0.85rem; font-size: 0.85rem; border-radius: 8px; }
 `;
-
-const Textarea = styled(Input).attrs({ as: 'textarea' })`
-  resize: vertical;
-  min-height: 100px;
-`;
-
-const FirstRow = styled.div`
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
-  animation: ${slideInFromLeft} 0.6s ease-out;
-  align-items: start;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-`;
-
-const TrekImageContainer = styled.div`
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  align-self: start;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 60%;
-    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
-    pointer-events: none;
-  }
-`;
-
-const TrekImageLarge = styled.img`
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  transition: transform 0.4s ease;
-  ${TrekImageContainer}:hover & { transform: scale(1.05); }
-  @media (max-width: 768px) { height: 180px; }
-`;
-
-const TrekImageOverlay = styled.div`
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 1rem;
-  z-index: 2;
-  color: white;
-  h3 { margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 700; }
-  p { margin: 0; font-size: 0.85rem; opacity: 0.9; display: flex; align-items: center; gap: 0.3rem; }
-`;
-
-const RightColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
+const Textarea = styled(Input).attrs({ as: 'textarea' })`resize: vertical; min-height: 80px; @media (max-width: 480px) { min-height: 60px; }`;
+const TwoCardRow = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; @media (max-width: 600px) { grid-template-columns: 1fr; gap: 0.75rem; }`;
 const InteractiveCard = styled.div`
-  background: ${props => props.isOpen 
-    ? `linear-gradient(135deg, ${theme.white} 0%, ${theme.peach} 100%)`
-    : `linear-gradient(135deg, ${theme.white} 0%, ${theme.cream} 100%)`};
-  padding: 1.25rem;
-  border-radius: 14px;
-  border: 2px solid ${props => props.isOpen ? theme.primary : theme.peach};
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: ${props => props.isOpen 
-    ? `0 8px 25px rgba(255, 112, 67, 0.2)` 
-    : `0 2px 8px rgba(0, 0, 0, 0.06)`};
-
-  &:hover {
-    border-color: ${theme.primary};
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 112, 67, 0.15);
-  }
+  background: ${props => props.isOpen ? theme.cardBgLight : theme.cardBg}; padding: 1rem 1.1rem; border-radius: 14px;
+  border: 2px solid ${props => props.isOpen ? theme.primary : theme.borderLight}; cursor: pointer; transition: all 0.25s ease;
+  box-shadow: ${props => props.isOpen ? `0 4px 20px ${theme.primaryGlow}` : `0 1px 4px rgba(0,0,0,0.2)`};
+  &:hover { border-color: ${theme.primary}; box-shadow: 0 4px 16px ${theme.primaryGlow}; }
+  @media (max-width: 480px) { padding: 0.85rem 1rem; border-radius: 12px; }
 `;
+const CardHeader = styled.div`display: flex; justify-content: space-between; align-items: center;`;
+const CardLabel = styled.div`display: flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; font-weight: 700; color: ${theme.textLight}; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Sora', sans-serif; svg { color: ${theme.primary}; font-size: 0.85rem; }`;
+const CardValue = styled.div`font-size: 0.95rem; font-weight: 700; color: ${theme.textDark}; margin-top: 0.35rem; display: flex; align-items: center; justify-content: space-between; font-family: 'Sora', sans-serif; @media (max-width: 480px) { font-size: 0.88rem; }`;
+const CardArrow = styled.div`color: ${theme.primary}; font-size: 1rem; transition: transform 0.3s ease; transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};`;
+const CardDropdown = styled.div`max-height: ${props => props.isOpen ? '500px' : '0'}; opacity: ${props => props.isOpen ? '1' : '0'}; overflow: hidden; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); margin-top: ${props => props.isOpen ? '0.75rem' : '0'}; padding-top: ${props => props.isOpen ? '0.75rem' : '0'}; border-top: ${props => props.isOpen ? `1px solid ${theme.borderLight}` : 'none'};`;
+const SelectedBadge = styled.span`background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark}); color: white; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;`;
 
-const CardHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+const ParticipantCounterWrapper = styled.div`display: flex; align-items: center; justify-content: center; gap: 0; background: ${theme.inputBg}; border: 1.5px solid ${theme.inputBorder}; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.2);`;
+const CounterButton = styled.button`
+  width: 44px; height: 48px; display: flex; align-items: center; justify-content: center;
+  background: ${props => props.disabled ? theme.cardBg : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`};
+  border: none; cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'}; transition: all 0.2s ease;
+  font-size: 1.4rem; font-weight: 500; color: ${props => props.disabled ? theme.darkGray : 'white'}; flex-shrink: 0; line-height: 1; border-radius: 50%; margin: 0 8px;
+  &:hover:not(:disabled) { background: linear-gradient(135deg, ${theme.primaryDark} 0%, #cc4a20 100%); transform: scale(1.05); }
+  @media (max-width: 480px) { width: 40px; height: 44px; font-size: 1.2rem; }
 `;
-
-const CardLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: ${theme.darkGray};
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  svg { color: ${theme.primary}; font-size: 1rem; }
-`;
-
-const CardValue = styled.div`
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: ${theme.text};
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const CardArrow = styled.div`
-  color: ${theme.primary};
-  font-size: 1.2rem;
-  transition: transform 0.3s ease;
-  transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
-`;
-
-const CardDropdown = styled.div`
-  max-height: ${props => props.isOpen ? '400px' : '0'};
-  opacity: ${props => props.isOpen ? '1' : '0'};
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-top: ${props => props.isOpen ? '1rem' : '0'};
-  padding-top: ${props => props.isOpen ? '1rem' : '0'};
-  border-top: ${props => props.isOpen ? `1px solid ${theme.peach}` : 'none'};
-`;
-
-const ParticipantGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
-`;
-
-const ParticipantOption = styled.button`
-  padding: 0.75rem 0.5rem;
-  background: ${props => props.selected 
-    ? `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)` 
-    : theme.white};
-  color: ${props => props.selected ? 'white' : theme.text};
-  border: 2px solid ${props => props.selected ? theme.primary : theme.mediumGray};
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.selected 
-      ? `linear-gradient(135deg, ${theme.primaryDark} 0%, #E64A19 100%)` 
-      : theme.peach};
-    border-color: ${theme.primary};
-    transform: scale(1.05);
-  }
-`;
-
-const SelectedBadge = styled.span`
-  background: linear-gradient(135deg, ${theme.primary}, ${theme.accent});
-  color: white;
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-`;
+const CounterDisplay = styled.div`flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.4rem 0.75rem;`;
+const CounterNumber = styled.span`font-size: 1.6rem; font-weight: 800; color: ${theme.textDark}; line-height: 1; font-family: 'Sora', sans-serif;`;
+const CounterLabel = styled.span`font-size: 0.7rem; color: ${theme.darkGray}; font-weight: 500; margin-top: 2px;`;
+const CounterInfoRow = styled.div`display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem; padding: 0.4rem 0.65rem; background: ${theme.cardBg}; border-radius: 8px; font-size: 0.75rem; color: ${theme.darkGray}; font-weight: 500; span { color: ${theme.primary}; font-weight: 700; }`;
 
 const DetailBox = styled.div`
-  background: ${props => props.isExpanded 
-    ? `linear-gradient(135deg, ${theme.peach} 0%, ${theme.white} 100%)`
-    : theme.white};
-  padding: ${props => props.isExpanded ? '1.5rem' : '1.25rem'};
-  border-radius: 14px;
-  border: 2px solid ${props => props.isExpanded ? theme.primary : theme.mediumGray};
-  margin-bottom: 0.75rem;
-  cursor: ${props => props.isExpanded ? 'default' : 'pointer'};
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  box-shadow: ${props => props.isExpanded 
-    ? `0 10px 30px rgba(255, 112, 67, 0.15)` 
-    : `0 2px 6px rgba(0, 0, 0, 0.04)`};
-
-  ${props => props.isExpanded && css`
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, ${theme.primary}, ${theme.accent});
-      border-radius: 14px 14px 0 0;
-    }
-  `}
-
-  &:hover:not([data-expanded="true"]) {
-    border-color: ${theme.primaryLight};
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 112, 67, 0.12);
-  }
-
-  ${props => props.isDisabled && css`
-    opacity: 0.5;
-    pointer-events: none;
-  `}
+  background: ${props => props.isExpanded ? theme.cardBgLight : theme.cardBg}; padding: ${props => props.isExpanded ? '1.25rem' : '1rem'}; border-radius: 14px;
+  border: 2px solid ${props => props.isExpanded ? theme.primary : theme.borderLight}; cursor: ${props => props.isExpanded ? 'default' : 'pointer'};
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+  box-shadow: ${props => props.isExpanded ? `0 8px 24px ${theme.primaryGlow}` : `0 1px 4px rgba(0,0,0,0.2)`};
+  ${props => props.isExpanded && css`&::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, ${theme.primary}, ${theme.accent}); border-radius: 14px 14px 0 0; }`}
+  &:hover:not([data-expanded="true"]) { border-color: rgba(255, 107, 53, 0.4); transform: translateY(-1px); box-shadow: 0 4px 16px ${theme.primaryGlow}; }
+  ${props => props.isDisabled && css`opacity: 0.35; pointer-events: none;`}
+  @media (max-width: 480px) { padding: ${props => props.isExpanded ? '1rem' : '0.85rem'}; border-radius: 12px; }
 `;
-
-const DetailBoxHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${props => props.isExpanded ? '1.25rem' : '0'};
-`;
-
-const DetailBoxTitle = styled.h3`
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: ${theme.text};
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  svg { color: ${theme.primary}; }
-`;
-
-const StatusDot = styled.span`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${props => props.completed ? theme.success : theme.mediumGray};
-  margin-left: 0.5rem;
-`;
-
-const DetailBoxContent = styled.div`
-  max-height: ${props => props.isExpanded ? '800px' : '0'};
-  opacity: ${props => props.isExpanded ? '1' : '0'};
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-`;
-
-const FieldRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-`;
-
+const DetailBoxHeader = styled.div`display: flex; justify-content: space-between; align-items: center; margin-bottom: ${props => props.isExpanded ? '1rem' : '0'};`;
+const DetailBoxTitle = styled.h3`margin: 0; font-size: 0.9rem; font-weight: 700; color: ${theme.textDark}; display: flex; align-items: center; gap: 0.5rem; font-family: 'Sora', sans-serif; svg { color: ${theme.primary}; } @media (max-width: 480px) { font-size: 0.82rem; gap: 0.4rem; }`;
+const StatusDot = styled.span`width: 7px; height: 7px; border-radius: 50%; background: ${props => props.completed ? theme.success : theme.mediumGray}; margin-left: 0.4rem;`;
+const DetailBoxContent = styled.div`max-height: ${props => props.isExpanded ? '800px' : '0'}; opacity: ${props => props.isExpanded ? '1' : '0'}; overflow: hidden; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);`;
+const FieldRow = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.65rem; @media (max-width: 600px) { grid-template-columns: 1fr; gap: 0.6rem; }`;
 const DoneButton = styled.button`
-  background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%);
-  color: white;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1.25rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(255, 112, 67, 0.3);
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 112, 67, 0.4);
-  }
-  &:disabled {
-    background: ${theme.mediumGray};
-    box-shadow: none;
-    cursor: not-allowed;
-  }
+  background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.25s ease; margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px ${theme.primaryGlow}; font-family: 'Sora', sans-serif;
+  &:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px ${theme.primaryGlow}; }
+  &:disabled { background: ${theme.mediumGray}; box-shadow: none; cursor: not-allowed; }
+  @media (max-width: 480px) { padding: 0.55rem 1rem; font-size: 0.8rem; width: 100%; justify-content: center; }
 `;
-
 const ErrorSpan = styled.span`
-  color: #E53935;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.4rem;
-
-  &::before {
-    content: '!';
-    background: #E53935;
-    color: white;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 700;
-  }
+  color: #EF5350; font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; margin-top: 0.3rem;
+  &::before { content: '!'; background: #EF5350; color: white; width: 13px; height: 13px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
 `;
 
-// Step 2 - Payment styled components
-const SecurePaymentBanner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(5, 150, 105, 0.04) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.15);
+// ============================================
+// STEP 2 — PAYMENT COMPONENTS
+// ============================================
+const SecurePaymentBanner = styled.div`display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem; background: rgba(78, 171, 83, 0.1); border: 1px solid rgba(78, 171, 83, 0.25); border-radius: 10px; font-size: 0.8rem; font-weight: 600; color: #6BCB77; svg { font-size: 0.9rem; } @media (max-width: 480px) { font-size: 0.72rem; padding: 0.5rem; }`;
+
+const BookingSummaryCard = styled.div`background: ${theme.cardBg}; padding: 1.25rem; border-radius: 16px; border: 1px solid ${theme.borderLight}; @media (max-width: 480px) { padding: 1rem; border-radius: 12px; }`;
+const SummaryHeader = styled.div`display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid ${theme.borderLight};`;
+const SectionIcon = styled.div`width: 36px; height: 36px; border-radius: 10px; background: ${props => props.variant === 'green' ? 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)' : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`}; display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; flex-shrink: 0; @media (max-width: 480px) { width: 32px; height: 32px; font-size: 0.9rem; }`;
+const SummaryTitle = styled.h3`margin: 0; font-size: 1rem; font-weight: 700; color: ${theme.textDark}; font-family: 'Sora', sans-serif; @media (max-width: 480px) { font-size: 0.9rem; }`;
+const SummaryGrid = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; @media (max-width: 480px) { grid-template-columns: 1fr; gap: 0.5rem; }`;
+const SummaryItem = styled.div`font-size: 0.85rem; color: ${theme.textLight}; font-weight: 500; strong { color: ${theme.textDark}; font-weight: 600; } @media (max-width: 480px) { font-size: 0.8rem; }`;
+const ParticipantChip = styled.div`display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem; background: ${props => props.isPrimary ? `rgba(255, 107, 53, 0.15)` : theme.cardBgLight}; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: ${props => props.isPrimary ? theme.primary : theme.textLight}; border: 1px solid ${props => props.isPrimary ? 'rgba(255,107,53,0.25)' : theme.borderLight}; margin: 0.2rem 0.2rem 0.2rem 0; @media (max-width: 480px) { font-size: 0.72rem; padding: 0.25rem 0.5rem; }`;
+
+// ★ Payment Split Card
+const PaymentSplitCard = styled.div`
+  background: rgba(255, 107, 53, 0.06);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 14px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  &::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, ${theme.primary}, ${theme.primaryDark}); }
+  @media (max-width: 480px) { padding: 1rem; border-radius: 12px; }
+`;
+const SplitGrid = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.85rem; @media (max-width: 400px) { grid-template-columns: 1fr; }`;
+const SplitItem = styled.div`
+  background: ${props => props.$active ? 'rgba(255, 107, 53, 0.12)' : 'rgba(255,255,255,0.03)'};
+  border: 1px solid ${props => props.$active ? 'rgba(255, 107, 53, 0.25)' : theme.borderLight};
   border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #059669;
-  margin-bottom: 1rem;
-  animation: ${fadeIn} 0.5s ease-out;
-  svg { font-size: 1rem; }
+  padding: 1rem;
+  text-align: center;
 `;
-
-const BookingSummaryCard = styled.div`
-  background: linear-gradient(135deg, hsla(0, 0%, 98%, 0.04) 0%, rgba(194, 27, 21, 0.04) 100%);
-  padding: 1.5rem;
-  border-radius: 16px;
-  border: 2px solid rgba(9, 10, 10, 0.12);
-  margin-bottom: 1rem;
-`;
-
-const SummaryHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #383a3ccb;
-`;
-
-const SectionIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: ${props => props.variant === 'green' 
-    ? 'linear-gradient(135deg, #4CAF50 0%, #388E3C 100%)' 
-    : props.variant === 'black'
-      ? `linear-gradient(135deg, ${theme.secondary} 0%, ${theme.darkGray} 100%)`
-      : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-`;
-
-const SummaryTitle = styled.h3`
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0d0d0e;
-`;
-
-const SummaryGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  @media (max-width: 480px) { grid-template-columns: 1fr; }
-`;
-
-const SummaryItem = styled.div`
-  font-size: 0.9rem;
-  color: #475569;
-  font-weight: 500;
-  strong { color: #070707; font-weight: 600; }
-`;
-
-const ParticipantChip = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  background: ${props => props.isPrimary 
-    ? 'linear-gradient(135deg, rgba(192, 110, 104, 0.1), rgba(179, 131, 89, 0.1))' 
-    : '#f1f5f9'};
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: ${props => props.isPrimary ? '#000000' : '#475569'};
-  border: 1px solid ${props => props.isPrimary 
-    ? 'rgba(51, 153, 204, 0.2)' 
-    : 'rgba(226, 232, 240, 0.8)'};
-  margin: 0.25rem 0.25rem 0.25rem 0;
-`;
+const SplitPercent = styled.div`font-size: 1.6rem; font-weight: 800; color: ${props => props.$active ? theme.primary : theme.textLight}; line-height: 1; margin-bottom: 0.25rem; font-family: 'Sora', sans-serif; @media (max-width: 480px) { font-size: 1.3rem; }`;
+const SplitLabel = styled.div`font-size: 0.72rem; color: ${theme.darkGray}; font-weight: 500; line-height: 1.4; margin-bottom: 0.4rem;`;
+const SplitAmount = styled.div`font-size: 1rem; font-weight: 700; color: ${props => props.$active ? theme.primary : theme.textDark}; font-family: 'Sora', sans-serif;`;
+const SplitNote = styled.div`margin-top: 0.85rem; padding: 0.6rem 0.85rem; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 0.72rem; color: ${theme.darkGray}; display: flex; align-items: flex-start; gap: 0.4rem; line-height: 1.5; svg { color: ${theme.primary}; flex-shrink: 0; margin-top: 1px; } @media (max-width: 480px) { font-size: 0.68rem; }`;
 
 const PriceSummary = styled.div`
-  margin-top: 1.5rem;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 180, 219, 0.05) 100%);
-  padding: 1.75rem;
-  border-radius: 16px;
-  border: 2px solid rgba(51, 153, 204, 0.15);
-  position: relative;
-  overflow: hidden;
-  animation: ${fadeIn} 0.6s ease-out 0.4s both;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3399cc, #00b4db, #3399cc);
-    background-size: 200% 100%;
-    animation: ${shimmer} 2s infinite linear;
-  }
+  background: ${theme.cardBg}; padding: 1.4rem; border-radius: 16px; border: 1px solid ${theme.borderLight}; position: relative; overflow: hidden;
+  &::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, ${theme.primary}, ${theme.accent}, ${theme.primary}); background-size: 200% 100%; animation: ${shimmer} 2s infinite linear; }
+  @media (max-width: 480px) { padding: 1.1rem; border-radius: 12px; }
 `;
-
-const PriceItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #060606;
-  &:not(:last-child) { border-bottom: 1px solid rgba(51, 153, 204, 0.1); }
-`;
-
+const PriceItem = styled.div`display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; font-size: 0.9rem; font-weight: 500; color: ${theme.textLight}; &:not(:last-child) { border-bottom: 1px solid ${theme.borderLight}; } @media (max-width: 480px) { font-size: 0.82rem; padding: 0.5rem 0; }`;
 const PriceTotal = styled(PriceItem)`
-  margin-top: 0.75rem;
-  padding-top: 1.25rem;
-  border-top: 2px solid rgba(241, 8, 8, 0.2);
-  font-weight: 700;
-  font-size: 1.4rem;
-  color: #09090a;
-  background: linear-gradient(135deg, rgba(207, 152, 57, 0.08) 0%, rgba(208, 104, 78, 0.08) 100%);
-  margin: 0.75rem -1.75rem -1.75rem;
-  padding: 1.25rem 1.75rem;
-  border-radius: 0 0 14px 14px;
-
-  span:last-child {
-    background: linear-gradient(135deg, #d6410b 0%, #ac452f 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-`;
-// ADD THESE styled components with your others:
-
-const ParticipantCounterWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  background: ${theme.white};
-  border: 2px solid ${theme.mediumGray};
-  border-radius: 14px;
-  overflow: hidden;
-  margin-top: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-top: 0.5rem; padding-top: 1rem; border-top: 2px solid ${theme.borderLight}; font-weight: 800; font-size: 1.25rem; color: ${theme.textDark};
+  background: rgba(255, 107, 53, 0.08); margin: 0.5rem -1.4rem -1.4rem; padding: 1rem 1.4rem; border-radius: 0 0 14px 14px;
+  span:last-child { color: ${theme.primary}; font-size: 1.5rem; }
+  @media (max-width: 480px) { font-size: 1.1rem; margin: 0.5rem -1.1rem -1.1rem; padding: 0.85rem 1.1rem; border-radius: 0 0 10px 10px; span:last-child { font-size: 1.3rem; } }
 `;
 
-const CounterButton = styled.button`
-  width: 52px;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${props => props.disabled
-    ? theme.lightGray
-    : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`};
-  border: none;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.2s ease;
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: ${props => props.disabled ? theme.darkGray : 'white'};
-  flex-shrink: 0;
-  line-height: 1;
-  border-radius:50%;
+const ErrorMessage = styled.div`color: #EF5350; background: rgba(239, 83, 80, 0.1); border: 1.5px solid rgba(239, 83, 80, 0.25); padding: 1rem 1.1rem; border-radius: 12px; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.75rem; animation: ${bounceIn} 0.5s ease-out; svg { color: #EF5350; font-size: 1.1rem; flex-shrink: 0; } @media (max-width: 480px) { padding: 0.85rem; font-size: 0.82rem; }`;
+const SuccessMessage = styled.div`color: #6BCB77; background: rgba(107, 203, 119, 0.1); border: 1.5px solid rgba(107, 203, 119, 0.25); padding: 1rem 1.1rem; border-radius: 12px; font-size: 0.9rem; font-weight: 500; display: flex; align-items: flex-start; gap: 0.75rem; animation: ${bounceIn} 0.5s ease-out; svg { color: #6BCB77; font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; } @media (max-width: 480px) { padding: 0.85rem; font-size: 0.82rem; }`;
 
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, ${theme.primaryDark} 0%, #E64A19 100%);
-    transform: scale(1.05);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-`;
-
-const CounterDisplay = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  min-width: 80px;
-`;
-
-const CounterNumber = styled.span`
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: ${theme.text};
-  line-height: 1;
-`;
-
-const CounterLabel = styled.span`
-  font-size: 0.75rem;
-  color: ${theme.darkGray};
-  font-weight: 500;
-  margin-top: 2px;
-`;
-
-const CounterInfoRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: ${theme.cream};
-  border-radius: 8px;
-  font-size: 0.8rem;
-  color: ${theme.darkGray};
-  font-weight: 500;
-
-  span {
-    color: ${theme.primary};
-    font-weight: 700;
-  }
-`;   
-
-
-const ErrorMessage = styled.div`
-  color: #dc2626;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
-  border: 2px solid rgba(239, 68, 68, 0.2);
-  padding: 1.25rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  animation: ${bounceIn} 0.5s ease-out;
-  svg { color: #dc2626; font-size: 1.25rem; flex-shrink: 0; }
-`;
-
-const SuccessMessage = styled.div`
-  color: #059669;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
-  border: 2px solid rgba(16, 185, 129, 0.2);
-  padding: 1.25rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  animation: ${bounceIn} 0.5s ease-out;
-  svg { color: #059669; font-size: 1.25rem; flex-shrink: 0; margin-top: 2px; }
-`;
-
-// Footer buttons
-const FooterContainer = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  background: ${theme.white};
-  border-top: 2px solid ${theme.peach};
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-
-  @media (max-width: 480px) {
-    flex-direction: column-reverse;
-    padding: 1.25rem;
-    gap: 0.75rem;
-  }
-`;
-
+// ============================================
+// FOOTER BUTTONS
+// ============================================
 const Button = styled.button`
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-  }
+  padding: 0.85rem 1.75rem; border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 0.6rem; font-family: 'Sora', sans-serif; position: relative; overflow: hidden;
+  &::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.4s ease; }
   &:hover::before { left: 100%; }
-  @media (max-width: 480px) { width: 100%; }
+  @media (max-width: 480px) { width: 100%; padding: 0.8rem 1.5rem; font-size: 0.85rem; }
 `;
+const CancelButton = styled(Button)`background: ${theme.cardBg}; border: 1.5px solid ${theme.borderLight}; color: ${theme.textLight}; min-width: 100px; padding: 0.85rem 1.25rem; &:hover { background: ${theme.cardBgLight}; color: ${theme.textDark}; border-color: ${theme.mediumGray}; } @media (max-width: 480px) { min-width: auto; }`;
+const ProceedButton = styled(Button)`background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%); border: none; color: white; min-width: 160px; box-shadow: 0 4px 15px ${theme.primaryGlow}; &:hover { transform: translateY(-2px); box-shadow: 0 8px 25px ${theme.primaryGlow}; } &:disabled { background: ${theme.mediumGray}; box-shadow: none; } @media (max-width: 480px) { min-width: auto; }`;
+const PaymentButton = styled(ProceedButton)`background: linear-gradient(135deg, #2a2d35 0%, #1a1d23 100%); border: 1.5px solid ${theme.primary}; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2); &:hover { background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%); box-shadow: 0 8px 25px ${theme.primaryGlow}; }`;
+const LoadingIndicator = styled.div`display: inline-block; width: 1.1rem; height: 1.1rem; border: 2.5px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #ffffff; animation: ${spin} 1s linear infinite;`;
 
-const CancelButton = styled(Button)`
-  background: ${theme.white};
-  border: 2px solid ${theme.mediumGray};
-  color: ${theme.darkGray};
-  min-width: 120px;
-  &:hover { background: ${theme.lightGray}; border-color: ${theme.darkGray}; color: ${theme.text}; }
-`;
+// ============================================
+// OVERLAYS
+// ============================================
+const ProcessingOverlay = styled.div`position: fixed; inset: 0; background: linear-gradient(135deg, rgba(15, 17, 20, 0.97) 0%, rgba(255, 107, 53, 0.1) 50%, rgba(15, 17, 20, 0.97) 100%); background-size: 400% 400%; animation: ${gradientShift} 3s ease infinite; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; padding: 1rem;`;
+const ProcessingContent = styled.div`text-align: center; animation: ${slideInUp} 0.8s ease-out; max-width: 400px; width: 100%;`;
+const ProcessingSpinner = styled.div`width: 70px; height: 70px; border: 5px solid rgba(255, 107, 53, 0.15); border-radius: 50%; border-top: 5px solid ${theme.primary}; animation: ${spin} 1s linear infinite; margin: 0 auto 2rem; @media (max-width: 480px) { width: 56px; height: 56px; border-width: 4px; margin: 0 auto 1.5rem; }`;
+const ProcessingTitle = styled.h2`font-size: 1.8rem; font-weight: 700; margin: 0 0 1rem; font-family: 'Sora', sans-serif; animation: ${pulse} 2s ease-in-out infinite; color: ${theme.textDark}; @media (max-width: 480px) { font-size: 1.3rem; }`;
+const ProcessingSubtitle = styled.p`font-size: 1rem; opacity: 0.6; margin: 0; color: ${theme.textLight}; @media (max-width: 480px) { font-size: 0.85rem; }`;
+const EnhancedSuccessMessage = styled.div`background: linear-gradient(135deg, #4caf50 0%, #81c784 100%); color: white; padding: 2rem; border-radius: 20px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3); animation: ${successPulse} 2s ease-in-out infinite; @media (max-width: 480px) { padding: 1.5rem 1.25rem; border-radius: 16px; }`;
+const SuccessIcon = styled.div`width: 72px; height: 72px; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; background: rgba(255,255,255,0.2); animation: ${bounceIn} 1s ease-out; @media (max-width: 480px) { width: 56px; height: 56px; margin: 0 auto 1rem; }`;
+const SuccessTitle = styled.h3`font-size: 1.6rem; font-weight: 700; margin: 0 0 0.5rem; font-family: 'Sora', sans-serif; @media (max-width: 480px) { font-size: 1.2rem; }`;
+const SuccessSubtitle = styled.p`font-size: 1rem; opacity: 0.9; margin: 0; @media (max-width: 480px) { font-size: 0.85rem; }`;
+const ConfettiContainer = styled.div`position: absolute; inset: 0; pointer-events: none; overflow: hidden;`;
+const ConfettiParticle = styled.div`position: absolute; width: 7px; height: 7px; background: ${props => props.color || '#ffeb3b'}; border-radius: 50%; animation: ${confetti} 3s linear infinite; animation-delay: ${props => props.delay || '0s'}; top: ${props => props.top || '50%'}; left: ${props => props.left || '50%'}`;
+const CouponSuccessDiv = styled.div`margin-top: 1rem; padding: 0.85rem; background: rgba(255,255,255,0.2); border-radius: 10px;`;
 
-const ProceedButton = styled(Button)`
-  background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%);
-  border: none;
-  color: white;
-  min-width: 180px;
-  box-shadow: 0 4px 15px rgba(255, 112, 67, 0.35);
-  &:hover {
-    background: linear-gradient(135deg, ${theme.primaryDark} 0%, #E64A19 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 112, 67, 0.45);
-  }
-  &:disabled { background: ${theme.mediumGray}; box-shadow: none; }
-`;
-
-const PaymentButton = styled(ProceedButton)`
-  background: linear-gradient(135deg, #db392d 0%, #3b443b 100%);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  &:hover {
-    background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
-    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
-  }
-`;
-
-const LoadingIndicator = styled.div`
-  display: inline-block;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #ffffff;
-  animation: ${spin} 1s linear infinite;
-`;
-
-// Overlays
-const ProcessingOverlay = styled.div`
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(51, 153, 204, 0.95) 0%, 
-    rgba(0, 180, 219, 0.95) 50%,
-    rgba(76, 175, 80, 0.95) 100%);
-  background-size: 400% 400%;
-  animation: ${gradientShift} 3s ease infinite;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  color: white;
-`;
-
-const ProcessingContent = styled.div`
-  text-align: center;
-  animation: ${slideInUp} 0.8s ease-out;
-`;
-
-const ProcessingSpinner = styled.div`
-  width: 80px;
-  height: 80px;
-  border: 6px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top: 6px solid #ffffff;
-  animation: ${spin} 1s linear infinite;
-  margin: 0 auto 2rem;
-`;
-
-const ProcessingTitle = styled.h2`
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 1rem 0;
-  animation: ${pulse} 2s ease-in-out infinite;
-`;
-
-const ProcessingSubtitle = styled.p`
-  font-size: 1.1rem;
-  opacity: 0.9;
-  margin: 0;
-`;
-
-const EnhancedSuccessMessage = styled.div`
-  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
-  color: white;
-  padding: 2rem;
-  border-radius: 20px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
-  animation: ${successPulse} 2s ease-in-out infinite;
-`;
-
-const SuccessIcon = styled.div`
-  width: 80px;
-  height: 80px;
-  border: 4px solid white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  animation: ${bounceIn} 1s ease-out;
-`;
-
-const SuccessTitle = styled.h3`
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-`;
-
-const SuccessSubtitle = styled.p`
-  font-size: 1.1rem;
-  opacity: 0.9;
-  margin: 0;
-`;
-
-const ConfettiContainer = styled.div`
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  overflow: hidden;
-`;
-
-const ConfettiParticle = styled.div`
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: ${props => props.color || '#ffeb3b'};
-  border-radius: 50%;
-  animation: ${confetti} 3s linear infinite;
-  animation-delay: ${props => props.delay || '0s'};
-  top: ${props => props.top || '50%'};
-  left: ${props => props.left || '50%'};
-`;
-
-const CouponSuccessDiv = styled.div`
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  animation: ${fadeIn} 1s ease-out 1s both;
-`;
-
-// Unavailable date popup styled components
-const UnavailableDateOverlay = styled.div`
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 1rem;
-  animation: ${fadeIn} 0.3s ease-out;
-  @media (max-width: 480px) { padding: 0; align-items: flex-end; }
-`;
-
-const UnavailableDatePopup = styled.div`
-  background: ${theme.white};
-  border-radius: 20px;
-  width: 100%;
-  max-width: 450px;
-  overflow: hidden;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-  animation: ${bounceIn} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  @media (max-width: 480px) {
-    max-width: 100%;
-    border-radius: 20px 20px 0 0;
-    animation: ${slideInUp} 0.4s ease-out;
-  }
-`;
-
+// Unavailable date popup
+const UnavailableDateOverlay = styled.div`position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 1rem; animation: ${fadeIn} 0.3s ease-out;`;
+const UnavailableDatePopup = styled.div`background: ${theme.cardBg}; border-radius: 20px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 1px solid ${theme.borderLight}; animation: ${bounceIn} 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); @media (max-width: 480px) { border-radius: 16px; max-height: 85vh; }`;
 const PopupHeader = styled.div`
-  background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
-  padding: 1.5rem;
-  text-align: center;
-  position: relative;
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -10px; left: 50%;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-top: 12px solid #C62828;
-  }
+  background: linear-gradient(135deg, #E53935 0%, #C62828 100%); padding: 1.5rem; text-align: center; position: relative;
+  &::after { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 12px solid #C62828; }
+  @media (max-width: 480px) { padding: 1.25rem; }
 `;
-
-const PopupIconContainer = styled.div`
-  width: 60px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  animation: ${pulse} 2s ease-in-out infinite;
-  svg { font-size: 1.8rem; color: white; }
-`;
-
-const PopupTitle = styled.h3`
-  margin: 0;
-  color: white;
-  font-size: 1.3rem;
-  font-weight: 700;
-`;
-
-const PopupBody = styled.div`
-  padding: 2rem 1.5rem 1.5rem;
-  overflow-y: auto;
-`;
-
+const PopupIconContainer = styled.div`width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.85rem; animation: ${pulse} 2s ease-in-out infinite; svg { font-size: 1.6rem; color: white; } @media (max-width: 480px) { width: 48px; height: 48px; svg { font-size: 1.3rem; } }`;
+const PopupTitle = styled.h3`margin: 0; color: white; font-size: 1.2rem; font-weight: 700; font-family: 'Sora', sans-serif; @media (max-width: 480px) { font-size: 1.05rem; }`;
+const PopupBody = styled.div`padding: 1.85rem 1.5rem 1.25rem; overflow-y: auto; @media (max-width: 480px) { padding: 1.5rem 1rem 1rem; }`;
 const PopupDateDisplay = styled.div`
-  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
-  border: 2px solid #FF9800;
-  border-radius: 12px;
-  padding: 1rem;
-  text-align: center;
-  margin-bottom: 1.5rem;
-  animation: ${bounceIn} 0.4s ease-out;
-  .date-label { font-size: 0.8rem; color: #E65100; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem; }
-  .date-value { font-size: 1.1rem; color: #BF360C; font-weight: 700; }
+  background: rgba(255, 107, 53, 0.1); border: 2px solid ${theme.primary}; border-radius: 12px; padding: 0.85rem; text-align: center; margin-bottom: 1.25rem;
+  .date-label { font-size: 0.75rem; color: ${theme.primary}; font-weight: 600; text-transform: uppercase; margin-bottom: 0.2rem; }
+  .date-value { font-size: 1rem; color: ${theme.textDark}; font-weight: 700; }
+  @media (max-width: 480px) { padding: 0.7rem; .date-value { font-size: 0.9rem; } }
 `;
-
-const PopupMessage = styled.p`
-  color: ${theme.text};
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0 0 1.5rem;
-  text-align: center;
-`;
-
-const AvailableDatesSection = styled.div`
-  margin-top: 1rem;
-`;
-
-const AvailableDatesTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: ${theme.primary};
-  margin-bottom: 1rem;
-  svg { color: ${theme.success}; }
-`;
-
-const AvailableDatesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  max-height: 200px;
-  overflow-y: auto;
-`;
-
+const PopupMessage = styled.p`color: ${theme.textLight}; font-size: 0.95rem; line-height: 1.6; margin: 0 0 1.25rem; text-align: center; strong { color: ${theme.textDark}; } @media (max-width: 480px) { font-size: 0.85rem; }`;
+const AvailableDatesSection = styled.div`margin-top: 0.85rem;`;
+const AvailableDatesTitle = styled.div`display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; color: ${theme.primary}; margin-bottom: 0.85rem; svg { color: ${theme.success}; }`;
+const AvailableDatesGrid = styled.div`display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; max-height: 180px; overflow-y: auto; @media (max-width: 360px) { grid-template-columns: 1fr; }`;
 const AvailableDateButton = styled.button`
-  padding: 0.75rem 1rem;
-  background: ${theme.white};
-  border: 2px solid ${theme.mediumGray};
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: ${theme.text};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-  .day { display: block; font-size: 0.95rem; font-weight: 700; color: ${theme.primary}; }
-  .full-date { display: block; font-size: 0.8rem; color: ${theme.darkGray}; margin-top: 2px; }
-  &:hover {
-    background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%);
-    border-color: ${theme.primary};
-    transform: translateY(-2px);
-    .day, .full-date { color: white; }
-  }
+  padding: 0.65rem 0.85rem; background: ${theme.cardBgLight}; border: 2px solid ${theme.borderLight}; border-radius: 10px; font-size: 0.82rem; font-weight: 600; color: ${theme.textDark}; cursor: pointer; transition: all 0.2s ease; text-align: left;
+  .day { display: block; font-size: 0.9rem; font-weight: 700; color: ${theme.primary}; }
+  .full-date { display: block; font-size: 0.75rem; color: ${theme.textLight}; margin-top: 2px; }
+  &:hover { background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark}); border-color: ${theme.primary}; transform: translateY(-2px); .day, .full-date { color: white; } }
 `;
-
-const AvailableMonthsSection = styled.div`
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 2px dashed ${theme.mediumGray};
-`;
-
-const AvailableMonthsTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: ${theme.secondary};
-  margin-bottom: 1rem;
-  svg { color: ${theme.primary}; }
-`;
-
-const MonthsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-`;
-
+const AvailableMonthsSection = styled.div`margin-top: 1.25rem; padding-top: 1.25rem; border-top: 2px dashed ${theme.borderLight};`;
+const AvailableMonthsTitle = styled.div`display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; color: ${theme.textDark}; margin-bottom: 0.85rem; svg { color: ${theme.primary}; }`;
+const MonthsGrid = styled.div`display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; @media (max-width: 360px) { grid-template-columns: repeat(2, 1fr); }`;
 const MonthBadge = styled.div`
-  padding: 0.6rem 0.75rem;
-  background: ${props => props.isCurrentMonth 
-    ? `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`
-    : `linear-gradient(135deg, ${theme.cream} 0%, ${theme.peach} 100%)`};
-  border: 2px solid ${props => props.isCurrentMonth ? theme.primary : theme.primaryLight};
-  border-radius: 10px;
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: ${props => props.isCurrentMonth ? 'white' : theme.text};
+  padding: 0.55rem 0.65rem;
+  background: ${props => props.isCurrentMonth ? `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` : theme.cardBgLight};
+  border: 2px solid ${props => props.isCurrentMonth ? theme.primary : theme.borderLight}; border-radius: 10px; text-align: center; font-size: 0.82rem; font-weight: 600;
+  color: ${props => props.isCurrentMonth ? 'white' : theme.textLight};
   .month-name { display: block; font-weight: 700; }
-  .month-status { display: block; font-size: 0.7rem; margin-top: 2px; opacity: 0.8; }
+  .month-status { display: block; font-size: 0.65rem; margin-top: 2px; opacity: 0.8; }
 `;
+const MonthsHelpText = styled.div`margin-top: 0.85rem; padding: 0.65rem 0.85rem; background: rgba(33, 150, 243, 0.08); border: 1px solid rgba(33, 150, 243, 0.2); border-radius: 10px; font-size: 0.82rem; color: #64B5F6; display: flex; align-items: flex-start; gap: 0.5rem; svg { flex-shrink: 0; margin-top: 2px; }`;
+const NoAvailableDatesMessage = styled.div`background: rgba(239, 83, 80, 0.1); border: 2px solid #EF5350; border-radius: 12px; padding: 1.1rem; text-align: center; color: #EF5350; font-weight: 600; svg { display: block; margin: 0 auto 0.5rem; font-size: 1.4rem; }`;
+const PopupFooter = styled.div`padding: 0.85rem 1.5rem 1.25rem; display: flex; gap: 0.65rem; @media (max-width: 480px) { flex-direction: column-reverse; padding: 0.85rem 1rem; }`;
+const PopupButton = styled.button`flex: 1; padding: 0.8rem 1.1rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-family: 'Sora', sans-serif; @media (max-width: 480px) { padding: 0.75rem 1rem; font-size: 0.85rem; }`;
+const ClosePopupButton = styled(PopupButton)`background: ${theme.cardBgLight}; border: 2px solid ${theme.borderLight}; color: ${theme.textLight}; &:hover { background: ${theme.mediumGray}; color: ${theme.textDark}; }`;
+const ChooseAnotherButton = styled(PopupButton)`background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark}); border: none; color: white; box-shadow: 0 4px 12px ${theme.primaryGlow}; &:hover { transform: translateY(-2px); box-shadow: 0 6px 20px ${theme.primaryGlow}; }`;
 
-const MonthsHelpText = styled.div`
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.04) 100%);
-  border: 1px solid rgba(33, 150, 243, 0.2);
-  border-radius: 10px;
-  font-size: 0.85rem;
-  color: #1565C0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  svg { flex-shrink: 0; margin-top: 2px; }
-`;
-
-const NoAvailableDatesMessage = styled.div`
-  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
-  border: 2px solid #EF5350;
-  border-radius: 12px;
-  padding: 1.25rem;
-  text-align: center;
-  color: #C62828;
-  font-weight: 600;
-  svg { display: block; margin: 0 auto 0.5rem; font-size: 1.5rem; }
-`;
-
-const PopupFooter = styled.div`
-  padding: 1rem 1.5rem 1.5rem;
-  display: flex;
-  gap: 0.75rem;
-  @media (max-width: 480px) { flex-direction: column-reverse; padding: 1rem; }
-`;
-
-const PopupButton = styled.button`
-  flex: 1;
-  padding: 0.9rem 1.25rem;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-`;
-
-const ClosePopupButton = styled(PopupButton)`
-  background: ${theme.lightGray};
-  border: 2px solid ${theme.mediumGray};
-  color: ${theme.darkGray};
-  &:hover { background: ${theme.mediumGray}; color: ${theme.text}; }
-`;
-
-const ChooseAnotherButton = styled(PopupButton)`
-  background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%);
-  border: none;
-  color: white;
-  box-shadow: 0 4px 12px rgba(255, 112, 67, 0.3);
-  &:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 112, 67, 0.4); }
-`;
-
-// Loading state for fetching trek
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 1.5rem;
-`;
-
-const LoadingSpinner = styled.div`
-  width: 60px;
-  height: 60px;
-  border: 5px solid ${theme.peach};
-  border-radius: 50%;
-  border-top: 5px solid ${theme.primary};
-  animation: ${spin} 1s linear infinite;
-`;
-
-const LoadingText = styled.p`
-  font-size: 1.1rem;
-  color: ${theme.darkGray};
-  font-weight: 500;
-`;
-
-const ErrorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 1.5rem;
-  text-align: center;
-  padding: 2rem;
-`;
-
-const ErrorTitle = styled.h2`
-  color: ${theme.text};
-  font-size: 1.5rem;
-`;
-
-const ErrorText = styled.p`
-  color: ${theme.darkGray};
-  font-size: 1rem;
-`;
-
-const GoBackButton = styled(Button)`
-  background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%);
-  border: none;
-  color: white;
-  margin-top: 1rem;
-`;
+const LoadingContainer = styled.div`display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1.5rem;`;
+const LoadingSpinner = styled.div`width: 56px; height: 56px; border: 4px solid rgba(255, 107, 53, 0.15); border-radius: 50%; border-top: 4px solid ${theme.primary}; animation: ${spin} 1s linear infinite;`;
+const LoadingText = styled.p`font-size: 1rem; color: rgba(255,255,255,0.6); font-weight: 500;`;
+const ErrorContainer = styled.div`display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1.25rem; text-align: center; padding: 2rem;`;
+const ErrorTitle = styled.h2`color: white; font-size: 1.4rem; font-family: 'Sora', sans-serif;`;
+const ErrorText = styled.p`color: rgba(255,255,255,0.6); font-size: 0.95rem;`;
+const GoBackButton = styled(Button)`background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark}); border: none; color: white; margin-top: 0.75rem;`;
 
 // ============================================
 // MAIN COMPONENT
 // ============================================
 const BookingPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // trek ID from URL
+  const { id } = useParams();
   const location = useLocation();
 
-  // Trek data - can come from route state or fetched from Firestore
   const [trek, setTrek] = useState(location.state?.trek || null);
   const [loading, setLoading] = useState(!location.state?.trek);
   const [fetchError, setFetchError] = useState(null);
-  // ✅ ADD this with your other useState declarations:
-const [calendarOpenDate, setCalendarOpenDate] = useState(null);
+  const [calendarOpenDate, setCalendarOpenDate] = useState(null);
 
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    startDate: '',
-    totalParticipants: 1,
-    specialRequests: ''
-  });
-
-  const [primaryBooker, setPrimaryBooker] = useState({
-    name: '',
-    email: '',
-    contactNumber: ''
-  });
-
-  const [participants, setParticipants] = useState([
-    {
-      participantId: 'p1',
-      name: '',
-      email: '',
-      age: '',
-      emergencyContact: '',
-      isPrimaryBooker: true
-    }
-  ]);
+  const [formData, setFormData] = useState({ startDate: '', totalParticipants: 1, specialRequests: '' });
+  const [primaryBooker, setPrimaryBooker] = useState({ name: '', email: '', contactNumber: '' });
+  const [participants, setParticipants] = useState([{ participantId: 'p1', name: '', email: '', age: '', emergencyContact: '', isPrimaryBooker: true }]);
 
   const [errors, setErrors] = useState({});
   const [bookingId, setBookingId] = useState(null);
@@ -1541,7 +527,6 @@ const [calendarOpenDate, setCalendarOpenDate] = useState(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const [activeCoupon, setActiveCoupon] = useState(null);
-  const [originalAmount, setOriginalAmount] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
 
   const [isDateCardOpen, setIsDateCardOpen] = useState(false);
@@ -1554,1321 +539,405 @@ const [calendarOpenDate, setCalendarOpenDate] = useState(null);
   const [selectedUnavailableDate, setSelectedUnavailableDate] = useState(null);
 
   const today = new Date();
+  const basePrice = trek?.numericPrice || parseInt(trek?.price?.replace(/[^0-9]/g, '')) || 0;
 
-  // ============================================
-  // FETCH TREK DATA if not passed via route state
-  // ============================================
+  // ── Fetch trek ──
   useEffect(() => {
     const fetchTrek = async () => {
-      if (trek) {
-        setLoading(false);
-        return;
-      }
-
+      if (trek) { setLoading(false); return; }
       try {
         setLoading(true);
         const trekDoc = await getDoc(doc(db, 'treks', id));
-        if (trekDoc.exists()) {
-          setTrek({ id: trekDoc.id, ...trekDoc.data() });
-        } else {
-          setFetchError('Trek not found');
-        }
-      } catch (error) {
-        console.error('Error fetching trek:', error);
-        setFetchError('Failed to load trek details');
-      } finally {
-        setLoading(false);
-      }
+        if (trekDoc.exists()) setTrek({ id: trekDoc.id, ...trekDoc.data() });
+        else setFetchError('Trek not found');
+      } catch { setFetchError('Failed to load trek details'); }
+      finally { setLoading(false); }
     };
-
     fetchTrek();
   }, [id, trek]);
 
-  // ============================================
-  // FETCH USER DATA + LOAD RAZORPAY
-  // ============================================
+  // ── Fetch user ──
   useEffect(() => {
     const getCurrentUser = async () => {
       if (auth.currentUser) {
         let userProfileData = {};
         try {
           const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-          if (userDoc.exists()) {
-            userProfileData = userDoc.data();
-          }
-        } catch (error) {
-          console.warn('Could not fetch user profile:', error);
-        }
-
+          if (userDoc.exists()) userProfileData = userDoc.data();
+        } catch {}
         const bookerInfo = {
           name: auth.currentUser.displayName || userProfileData.name || userProfileData.firstName || '',
           email: auth.currentUser.email || userProfileData.email || '',
           contactNumber: userProfileData.phone || userProfileData.phoneNumber || userProfileData.contactNumber || auth.currentUser.phoneNumber || '',
         };
-
         setPrimaryBooker(bookerInfo);
-        setParticipants([
-          {
-            participantId: 'p1',
-            name: bookerInfo.name,
-            email: bookerInfo.email,
-            age: userProfileData.age || '',
-            emergencyContact: bookerInfo.contactNumber,
-            isPrimaryBooker: true
-          }
-        ]);
-      } else {
-        // If user is not logged in, redirect to login
-        navigate('/login', { state: { redirectTo: `/booking/${id}` } });
-      }
+        setParticipants([{ participantId: 'p1', name: bookerInfo.name, email: bookerInfo.email, age: userProfileData.age || '', emergencyContact: bookerInfo.contactNumber, isPrimaryBooker: true }]);
+      } else { navigate('/login', { state: { redirectTo: `/booking/${id}` } }); }
     };
-
     if (trek) {
       getCurrentUser();
-
       setActiveCoupon(null);
       setDiscountAmount(0);
-
-      const basePrice = trek?.numericPrice || parseInt(trek?.price?.replace(/[^0-9]/g, '')) || 0;
-      setOriginalAmount(basePrice);
-
-      loadRazorpayScript().catch(err => {
-        console.error("Failed to load Razorpay script:", err);
-        setPaymentError("Failed to load payment gateway. Please try again.");
-      });
+      loadRazorpayScript().catch(() => setPaymentError("Failed to load payment gateway."));
     }
   }, [trek, id, navigate]);
 
-  // ============================================
-  // HELPER FUNCTIONS (same as BookingModal)
-  // ============================================
+  // ── Helpers ──
+  const getFirstAvailableDate = useCallback(() => {
+    const td = new Date(); td.setHours(0,0,0,0);
+    if (trek?.availableDates?.length) { const f = trek.availableDates.filter(d => { const dd = new Date(d); dd.setHours(0,0,0,0); return dd >= td; }).sort((a,b) => new Date(a)-new Date(b)); if (f.length) return new Date(f[0]); }
+    if (trek?.availableMonths?.length) { const c = td.getMonth(), y = td.getFullYear(), s = [...trek.availableMonths].sort((a,b)=>a-b), n = s.find(m=>m>=c); if (n !== undefined) { if (n===c) return td; return new Date(y,n,1); } return new Date(y+1,s[0],1); }
+    return td;
+  }, [trek]);
 
-  // ✅ ADD this new helper function with your other helpers:
-const getFirstAvailableDate = useCallback(() => {
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
-
-  // If trek has specific available dates
-  if (
-    trek?.availableDates &&
-    Array.isArray(trek.availableDates) &&
-    trek.availableDates.length > 0
-  ) {
-    const futureDates = trek.availableDates
-      .filter(dateStr => {
-        const d = new Date(dateStr);
-        d.setHours(0, 0, 0, 0);
-        return d >= todayDate;
-      })
-      .sort((a, b) => new Date(a) - new Date(b));
-
-    if (futureDates.length > 0) {
-      return new Date(futureDates[0]); // return Date object
-    }
-  }
-
-  // If trek has available months
-  if (
-    trek?.availableMonths &&
-    Array.isArray(trek.availableMonths) &&
-    trek.availableMonths.length > 0
-  ) {
-    const currentMonth = todayDate.getMonth();
-    const currentYear = todayDate.getFullYear();
-
-    // Find the next available month
-    const sortedMonths = [...trek.availableMonths].sort((a, b) => a - b);
-
-    // Check if any available month is current or future this year
-    const nextMonth = sortedMonths.find(m => m >= currentMonth);
-
-    if (nextMonth !== undefined) {
-      // Return first day of that month
-      const targetDate = new Date(currentYear, nextMonth, 1);
-      // If it's the current month, return today
-      if (nextMonth === currentMonth) return todayDate;
-      return targetDate;
-    } else {
-      // All months are in the past this year, go to next year
-      const firstMonth = sortedMonths[0];
-      return new Date(currentYear + 1, firstMonth, 1);
-    }
-  }
-
-  // Default: return today
-  return todayDate;
-}, [trek]);
-
-
-
-
-
-
-  const isDateAvailable = useCallback((dateString) => {
-    const date = new Date(dateString);
-    if (date < today) return false;
-
-    if (trek?.availableDates && Array.isArray(trek.availableDates) && trek.availableDates.length > 0) {
-      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      return trek.availableDates.includes(formattedDate);
-    }
-
-    if (trek?.availableMonths && Array.isArray(trek.availableMonths) && trek.availableMonths.length > 0) {
-      return trek.availableMonths.includes(date.getMonth());
-    }
-
+  const isDateAvailable = useCallback((ds) => {
+    const d = new Date(ds); if (d < today) return false;
+    if (trek?.availableDates?.length) { const f = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return trek.availableDates.includes(f); }
+    if (trek?.availableMonths?.length) return trek.availableMonths.includes(d.getMonth());
     return true;
-  }, [today, trek]);
+  }, [trek]);
 
-  const formatDateForDisplay = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const formatDateForPopup = (dateStr) => {
-    const date = new Date(dateStr);
-    return {
-      day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    };
-  };
-
-  const getFutureAvailableDates = () => {
-    if (!trek?.availableDates || !Array.isArray(trek.availableDates)) return [];
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    return trek.availableDates
-      .filter(dateStr => new Date(dateStr) >= todayDate)
-      .sort((a, b) => new Date(a) - new Date(b))
-      .slice(0, 6);
-  };
-
+  const formatDateForDisplay = (ds) => { if (!ds) return ''; return new Date(ds).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); };
+  const formatDateForPopup = (ds) => { const d = new Date(ds); return { day: d.toLocaleDateString('en-US', { weekday: 'short' }), full: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }; };
+  const getFutureAvailableDates = () => { if (!trek?.availableDates) return []; const td = new Date(); td.setHours(0,0,0,0); return trek.availableDates.filter(d => new Date(d) >= td).sort((a,b)=>new Date(a)-new Date(b)).slice(0,6); };
   const getAvailableMonths = () => {
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-
-    if (trek?.availableMonths && Array.isArray(trek.availableMonths) && trek.availableMonths.length > 0) {
-      const currentMonth = new Date().getMonth();
-      return trek.availableMonths
-        .sort((a, b) => a - b)
-        .map(monthIndex => ({
-          index: monthIndex,
-          name: monthNames[monthIndex],
-          shortName: monthNames[monthIndex].substring(0, 3),
-          isCurrentMonth: monthIndex === currentMonth,
-          isFutureMonth: monthIndex >= currentMonth
-        }));
-    }
+    const mn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (trek?.availableMonths?.length) { const cm = new Date().getMonth(); return trek.availableMonths.sort((a,b)=>a-b).map(mi => ({ index: mi, name: mn[mi], shortName: mn[mi].substring(0,3), isCurrentMonth: mi===cm, isFutureMonth: mi>=cm })); }
     return [];
   };
+  const getNextAvailableMonth = () => { const ms = getAvailableMonths(); const cm = new Date().getMonth(); const fm = ms.find(m=>m.index>=cm); if (fm) return fm.name; if (ms.length) return `${ms[0].name} (next year)`; return null; };
 
-  const getNextAvailableMonth = () => {
-    const months = getAvailableMonths();
-    const currentMonth = new Date().getMonth();
-    const futureMonth = months.find(m => m.index >= currentMonth);
-    if (futureMonth) return futureMonth.name;
-    if (months.length > 0) return `${months[0].name} (next year)`;
-    return null;
-  };
+  // ── Pricing ──
+  const calculateTotalPrice = useCallback(() => {
+    const sub = basePrice * formData.totalParticipants;
+    return activeCoupon ? Math.max(sub - discountAmount, 0) : sub;
+  }, [basePrice, formData.totalParticipants, activeCoupon, discountAmount]);
 
-  // ============================================
-  // HANDLERS
-  // ============================================
-// ✅ REPLACE WITH:
-const handleDateCardToggle = (e) => {
-  e.stopPropagation();
+  // ★ 20% upfront, 80% remaining
+  const calculateUpfront = useCallback(() => Math.ceil(calculateTotalPrice() * 0.20), [calculateTotalPrice]);
+  const calculateRemaining = useCallback(() => calculateTotalPrice() - calculateUpfront(), [calculateTotalPrice, calculateUpfront]);
 
-  const opening = !isDateCardOpen;
-  setIsDateCardOpen(opening);
-  setIsParticipantCardOpen(false);
-
-  // When opening the calendar, jump to first available date
-  if (opening) {
-    const firstAvailable = getFirstAvailableDate();
-    setCalendarOpenDate(firstAvailable);
-  }
-};
-
-  const handleParticipantCardToggle = (e) => {
-    e.stopPropagation();
-    setIsParticipantCardOpen(!isParticipantCardOpen);
-    setIsDateCardOpen(false);
-  };
-
+  // ── Handlers ──
+  const handleDateCardToggle = (e) => { e.stopPropagation(); const opening = !isDateCardOpen; setIsDateCardOpen(opening); setIsParticipantCardOpen(false); if (opening) setCalendarOpenDate(getFirstAvailableDate()); };
+  const handleParticipantCardToggle = (e) => { e.stopPropagation(); setIsParticipantCardOpen(!isParticipantCardOpen); setIsDateCardOpen(false); };
   const handleDateSelect = (date) => {
     if (!date) return;
-    const dateStr = date instanceof Date
-      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-      : date;
-
-    if (!isDateAvailable(dateStr)) {
-      setSelectedUnavailableDate(date);
-      setShowUnavailableDatePopup(true);
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, startDate: dateStr }));
-    setSelectedDateFormatted(formatDateForDisplay(dateStr));
-    setIsDateCardOpen(false);
-    if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }));
+    const ds = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    if (!isDateAvailable(ds)) { setSelectedUnavailableDate(date); setShowUnavailableDatePopup(true); return; }
+    setFormData(prev => ({ ...prev, startDate: ds })); setSelectedDateFormatted(formatDateForDisplay(ds)); setIsDateCardOpen(false); if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }));
   };
-
-  const handleSelectAvailableDate = (dateStr) => {
-    setFormData(prev => ({ ...prev, startDate: dateStr }));
-    setSelectedDateFormatted(formatDateForDisplay(dateStr));
-    setShowUnavailableDatePopup(false);
-    setSelectedUnavailableDate(null);
-    setIsDateCardOpen(false);
-    if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }));
-  };
-
-  const handleChooseAnotherDate = () => {
-    setShowUnavailableDatePopup(false);
-    setSelectedUnavailableDate(null);
-    setIsDateCardOpen(true);
-  };
-
-  const handleCloseUnavailablePopup = () => {
-    setShowUnavailableDatePopup(false);
-    setSelectedUnavailableDate(null);
-  };
-
+  const handleSelectAvailableDate = (ds) => { setFormData(prev => ({ ...prev, startDate: ds })); setSelectedDateFormatted(formatDateForDisplay(ds)); setShowUnavailableDatePopup(false); setSelectedUnavailableDate(null); setIsDateCardOpen(false); if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined })); };
+  const handleChooseAnotherDate = () => { setShowUnavailableDatePopup(false); setSelectedUnavailableDate(null); setIsDateCardOpen(true); };
+  const handleCloseUnavailablePopup = () => { setShowUnavailableDatePopup(false); setSelectedUnavailableDate(null); };
   const handleParticipantSelect = (count) => {
-    const currentParticipants = [...participants];
-    if (count > currentParticipants.length) {
-      const newParticipants = [];
-      for (let i = currentParticipants.length; i < count; i++) {
-        newParticipants.push({
-          participantId: `p${i + 1}`,
-          name: '', email: '', age: '', emergencyContact: '',
-          isPrimaryBooker: false
-        });
-      }
-      setParticipants([...currentParticipants, ...newParticipants]);
-    } else if (count < currentParticipants.length) {
-      setParticipants(currentParticipants.slice(0, count));
-    }
-    setFormData(prev => ({ ...prev, totalParticipants: count }));
-    setIsParticipantCardOpen(false);
+    const cur = [...participants];
+    if (count > cur.length) { const n = Array.from({ length: count-cur.length }, (_,i) => ({ participantId: `p${cur.length+i+1}`, name: '', email: '', age: '', emergencyContact: '', isPrimaryBooker: false })); setParticipants([...cur, ...n]); }
+    else if (count < cur.length) setParticipants(cur.slice(0, count));
+    setFormData(prev => ({ ...prev, totalParticipants: count })); setIsParticipantCardOpen(false);
   };
-
-  const handleBoxClick = (boxId) => {
-    if (currentExpandedBox === boxId) return;
-    setCurrentExpandedBox(boxId);
-  };
-
-  const handleDoneClick = (boxId) => {
-    setCompletedBoxes(prev => new Set([...prev, boxId]));
-    if (boxId === 'primary') {
-      setCurrentExpandedBox('participant-0');
-    } else {
-      const currentIndex = parseInt(boxId.split('-')[1]);
-      if (currentIndex < participants.length - 1) {
-        setCurrentExpandedBox(`participant-${currentIndex + 1}`);
-      } else {
-        setCurrentExpandedBox(null);
-      }
-    }
-  };
-
-  const handlePreviousBox = () => {
-    if (!currentExpandedBox || currentExpandedBox === 'primary') return;
-    if (currentExpandedBox === 'participant-0') {
-      setCurrentExpandedBox('primary');
-    } else {
-      const currentIndex = parseInt(currentExpandedBox.split('-')[1]);
-      setCurrentExpandedBox(`participant-${currentIndex - 1}`);
-    }
-  };
-
+  const handleBoxClick = (boxId) => { if (currentExpandedBox === boxId) return; setCurrentExpandedBox(boxId); };
+  const handleDoneClick = (boxId) => { setCompletedBoxes(prev => new Set([...prev, boxId])); if (boxId === 'primary') setCurrentExpandedBox('participant-0'); else { const ci = parseInt(boxId.split('-')[1]); if (ci < participants.length-1) setCurrentExpandedBox(`participant-${ci+1}`); else setCurrentExpandedBox(null); } };
+  const handlePreviousBox = () => { if (!currentExpandedBox || currentExpandedBox === 'primary') return; if (currentExpandedBox === 'participant-0') setCurrentExpandedBox('primary'); else { const ci = parseInt(currentExpandedBox.split('-')[1]); setCurrentExpandedBox(`participant-${ci-1}`); } };
   const isBoxValid = (boxId) => {
-  if (boxId === 'primary') {
-    return (
-      primaryBooker.name &&
-      primaryBooker.email &&
-      /^\d{10}$/.test(primaryBooker.contactNumber) // ✅ must be exactly 10 digits
-    );
-  }
-  const index = parseInt(boxId.split('-')[1]);
-  return participants[index]?.name?.trim() !== '';
-};
-
-  const handlePrimaryBookerChange = (field, value) => {
-    setPrimaryBooker(prev => ({ ...prev, [field]: value }));
-    if (participants[0]?.isPrimaryBooker) {
-      const updatedParticipants = [...participants];
-      updatedParticipants[0] = { ...updatedParticipants[0], [field]: value };
-      setParticipants(updatedParticipants);
-    }
-    if (errors[`primaryBooker_${field}`]) {
-      setErrors(prev => ({ ...prev, [`primaryBooker_${field}`]: undefined }));
-    }
+    if (boxId === 'primary') return primaryBooker.name && primaryBooker.email && /^\d{10}$/.test(primaryBooker.contactNumber);
+    const idx = parseInt(boxId.split('-')[1]); return participants[idx]?.name?.trim() !== '';
   };
-
-  const handleParticipantChange = (index, field, value) => {
-    const updatedParticipants = [...participants];
-    updatedParticipants[index] = { ...updatedParticipants[index], [field]: value };
-    setParticipants(updatedParticipants);
-    if (errors[`participant_${index}_${field}`]) {
-      setErrors(prev => ({ ...prev, [`participant_${index}_${field}`]: undefined }));
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
-  };
-
-  // ============================================
-  // VALIDATION
-  // ============================================
+  const handlePrimaryBookerChange = (field, value) => { setPrimaryBooker(prev => ({ ...prev, [field]: value })); if (participants[0]?.isPrimaryBooker) { const u = [...participants]; u[0] = { ...u[0], [field]: value }; setParticipants(u); } if (errors[`primaryBooker_${field}`]) setErrors(prev => ({ ...prev, [`primaryBooker_${field}`]: undefined })); };
+  const handleParticipantChange = (idx, field, value) => { const u = [...participants]; u[idx] = { ...u[idx], [field]: value }; setParticipants(u); if (errors[`participant_${idx}_${field}`]) setErrors(prev => ({ ...prev, [`participant_${idx}_${field}`]: undefined })); };
+  const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined })); };
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.startDate) {
-      newErrors.startDate = "Start date is required";
-    } else if (!isDateAvailable(formData.startDate)) {
-      newErrors.startDate = "Selected date is not available for booking.";
-    }
-
-    if (!primaryBooker.name) newErrors.primaryBooker_name = "Your name is required";
-    if (!primaryBooker.email) {
-      newErrors.primaryBooker_email = "Your email is required";
-    } else if (!/\S+@\S+\.\S+/.test(primaryBooker.email)) {
-      newErrors.primaryBooker_email = "Email is invalid";
-    }
-    if (!primaryBooker.contactNumber) {
-      newErrors.primaryBooker_contactNumber = "Contact number is required";
-    } else if (!/^\d{10}$/.test(primaryBooker.contactNumber)) {
-      newErrors.primaryBooker_contactNumber = "Contact number must be 10 digits";
-    }
-
-    participants.forEach((participant, index) => {
-      if (!participant.name || participant.name.trim() === '') {
-        newErrors[`participant_${index}_name`] = `Participant ${index + 1} name is required`;
-      }
-      if (participant.email && !/\S+@\S+\.\S+/.test(participant.email)) {
-        newErrors[`participant_${index}_email`] = `Invalid email for Participant ${index + 1}`;
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+    if (!formData.startDate) e.startDate = "Start date is required";
+    else if (!isDateAvailable(formData.startDate)) e.startDate = "Selected date is not available.";
+    if (!primaryBooker.name) e.primaryBooker_name = "Your name is required";
+    if (!primaryBooker.email) e.primaryBooker_email = "Your email is required";
+    else if (!/\S+@\S+\.\S+/.test(primaryBooker.email)) e.primaryBooker_email = "Email is invalid";
+    if (!primaryBooker.contactNumber) e.primaryBooker_contactNumber = "Contact number is required";
+    else if (!/^\d{10}$/.test(primaryBooker.contactNumber)) e.primaryBooker_contactNumber = "Must be 10 digits";
+    participants.forEach((p, i) => { if (!p.name?.trim()) e[`participant_${i}_name`] = `Participant ${i+1} name required`; if (p.email && !/\S+@\S+\.\S+/.test(p.email)) e[`participant_${i}_email`] = `Invalid email`; });
+    setErrors(e); return Object.keys(e).length === 0;
   };
+  const handleSubmit = (e) => { e.preventDefault(); if (validateForm()) setStep(2); };
+  const handleApplyCoupon = (coupon) => { if (coupon) { setActiveCoupon(coupon); setDiscountAmount(coupon.calculatedDiscount); setPaymentError(null); } else { setActiveCoupon(null); setDiscountAmount(0); } };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) setStep(2);
-  };
-
-  // ============================================
-  // PRICING
-  // ============================================
-  const calculateTotalPrice = useCallback(() => {
-    const basePrice = trek?.numericPrice || parseInt(trek?.price?.replace(/[^0-9]/g, '')) || 0;
-    const subtotal = basePrice * formData.totalParticipants;
-    if (activeCoupon) return Math.max(subtotal - discountAmount, 0);
-    return subtotal;
-  }, [trek, formData.totalParticipants, activeCoupon, discountAmount]);
-
-  const handleApplyCoupon = (coupon) => {
-    if (coupon) {
-      setActiveCoupon(coupon);
-      setDiscountAmount(coupon.calculatedDiscount);
-      setPaymentError(null);
-    } else {
-      setActiveCoupon(null);
-      setDiscountAmount(0);
-    }
-  };
-
-  // ============================================
-  // PAYMENT PROCESSING (same as BookingModal)
-  // ============================================
+  // ★ Payment — charges only 20% via Razorpay
   const handlePaymentProcess = async () => {
     try {
-      setIsProcessingPayment(true);
-      setPaymentError(null);
-
-      const total = calculateTotalPrice();
-      const baseAmount = trek?.numericPrice * formData.totalParticipants || total;
+      setIsProcessingPayment(true); setPaymentError(null);
+      const fullTrekCost = calculateTotalPrice();  // e.g. ₹6,170
+      const upfront = calculateUpfront();          // e.g. ₹1,234 (20%)
+      const remain = calculateRemaining();         // e.g. ₹4,936 (80%)
 
       const bookingData = {
         primaryBooker: { uid: auth.currentUser?.uid || null, ...primaryBooker },
-        participants,
-        trekId: trek.id,
-        trekName: trek.name,
-        startDate: formData.startDate,
-        pricePerPerson: trek?.numericPrice,
-        totalParticipants: formData.totalParticipants,
-        subtotal: baseAmount,
-        discount: discountAmount,
-        totalAmount: total,
-        coupon: activeCoupon ? {
-          id: activeCoupon.id,
-          code: activeCoupon.code,
-          discount: discountAmount,
-          discountType: activeCoupon.discountType,
-          originalAmount: baseAmount,
-          finalAmount: total
-        } : null,
-        specialRequests: formData.specialRequests || '',
-        createdAt: new Date().toISOString()
+        participants, trekId: trek.id, trekName: trek.name, startDate: formData.startDate,
+        pricePerPerson: basePrice, totalParticipants: formData.totalParticipants,
+        subtotal: basePrice * formData.totalParticipants, discount: discountAmount,
+        totalAmount: fullTrekCost,          // ★ FULL cost for DB
+        upfrontAmount: upfront,             // ★ 20% for DB
+        remainingAmount: remain,            // ★ 80% for DB
+        upfrontPercentage: 20,
+        coupon: activeCoupon ? { id: activeCoupon.id, code: activeCoupon.code, discount: discountAmount, discountType: activeCoupon.discountType, originalAmount: basePrice * formData.totalParticipants, finalAmount: fullTrekCost } : null,
+        specialRequests: formData.specialRequests || '', createdAt: new Date().toISOString()
       };
 
-      const paymentResult = await processBookingPayment(trek, bookingData);
+      // ★ Only charge 20% via Razorpay
+      const upfrontPerPerson = Math.ceil(upfront / formData.totalParticipants);
+      const trekForPayment = { ...trek, numericPrice: upfrontPerPerson };
 
-      if (paymentResult.success) {
-        const orderId = paymentResult.orderId || `order_${Date.now()}`;
-        setBookingId(orderId);
-        window.lastRazorpayBookingId = orderId;
-      } else {
-        setPaymentError(paymentResult.error || "Payment processing failed");
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      setPaymentError(error.message || "Failed to process payment");
-    } finally {
-      setIsProcessingPayment(false);
-    }
+      const result = await processBookingPayment(trekForPayment, {
+        ...bookingData,
+        totalAmount: upfront,    // ★ Override for payment
+        amount: upfront,
+        paymentAmount: upfront,
+      });
+
+      if (result.success) { const oid = result.orderId || `order_${Date.now()}`; setBookingId(oid); window.lastRazorpayBookingId = oid; }
+      else setPaymentError(result.error || "Payment failed");
+    } catch (err) { setPaymentError(err.message || "Failed to process payment"); }
+    finally { setIsProcessingPayment(false); }
   };
 
   const handlePaymentSuccess = useCallback(async (response) => {
     try {
-      setIsProcessingPayment(false);
-      setIsProcessingBooking(true);
-
-      const paymentResponse = {
-        ...response,
-        bookingId: bookingId || response.bookingId || response.razorpay_order_id,
-        orderId: bookingId || response.razorpay_order_id,
-        verifiedBookingId: bookingId,
-        notes: {
-          ...(response.notes || {}),
-          bookingId: bookingId || response.notes?.bookingId,
-          backupId: bookingId
-        }
-      };
-
+      setIsProcessingPayment(false); setIsProcessingBooking(true);
+      const paymentResponse = { ...response, bookingId: bookingId || response.bookingId || response.razorpay_order_id, orderId: bookingId || response.razorpay_order_id, verifiedBookingId: bookingId, notes: { ...(response.notes || {}), bookingId: bookingId || response.notes?.bookingId, backupId: bookingId } };
       window.lastRazorpayBookingId = bookingId || response.bookingId || response.razorpay_order_id;
-
-      let effectiveBookingId = bookingId ||
-        paymentResponse.bookingId ||
-        paymentResponse.razorpay_order_id ||
-        window.lastRazorpayBookingId;
-
-      if (!effectiveBookingId) {
-        effectiveBookingId = `fallback_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-        paymentResponse.bookingId = effectiveBookingId;
-      }
-
-      const completedBooking = await completeBookingPayment(effectiveBookingId, paymentResponse);
-
-      // Send email
+      let effectiveBookingId = bookingId || paymentResponse.bookingId || paymentResponse.razorpay_order_id || window.lastRazorpayBookingId;
+      if (!effectiveBookingId) { effectiveBookingId = `fallback_${Date.now()}_${Math.floor(Math.random() * 10000)}`; paymentResponse.bookingId = effectiveBookingId; }
+      await completeBookingPayment(effectiveBookingId, paymentResponse);
       try {
-        const bookingRef = doc(db, 'bookings', effectiveBookingId);
-        const bookingSnap = await getDoc(bookingRef);
-        let completeBookingData = bookingSnap.exists()
-          ? { id: bookingSnap.id, ...bookingSnap.data() }
-          : completedBooking || formData;
+        const snap = await getDoc(doc(db, 'bookings', effectiveBookingId));
+        const data = snap.exists() ? { id: snap.id, ...snap.data() } : {};
+        const emailData = { id: effectiveBookingId, bookingId: effectiveBookingId, name: data.name || primaryBooker.name, email: data.email || primaryBooker.email, contactNumber: data.contactNumber || primaryBooker.contactNumber, startDate: data.startDate || formData.startDate, participants: data.participants || formData.totalParticipants, totalAmount: data.totalAmount || calculateTotalPrice(), upfrontAmount: data.upfrontAmount || calculateUpfront(), remainingAmount: data.remainingAmount || calculateRemaining(), paymentId: response.razorpay_payment_id, status: 'confirmed', paymentStatus: 'completed', specialRequests: data.specialRequests || formData.specialRequests || 'None', discountAmount, createdAt: data.createdAt || new Date().toISOString() };
+        if (emailData.email) await emailService.sendConfirmationEmail(emailData, trek);
+      } catch (emailErr) { console.error('Email error:', emailErr); }
+      setIsProcessingBooking(false); setPaymentSuccess(true); setShowSuccessAnimation(true);
+      setTimeout(() => navigate(`/booking-confirmation/${effectiveBookingId}`), 3000);
+    } catch (err) { setPaymentError(err.message || "Failed to verify payment"); setIsProcessingBooking(false); }
+    finally { setIsProcessingPayment(false); }
+  }, [bookingId, navigate, formData, primaryBooker, trek, calculateTotalPrice, calculateUpfront, calculateRemaining, discountAmount]);
 
-        const emailBookingData = {
-          id: effectiveBookingId,
-          bookingId: effectiveBookingId,
-          name: completeBookingData.name || primaryBooker.name || 'Customer',
-          email: completeBookingData.email || primaryBooker.email,
-          contactNumber: completeBookingData.contactNumber || primaryBooker.contactNumber,
-          startDate: completeBookingData.startDate || formData.startDate,
-          participants: completeBookingData.participants || formData.totalParticipants,
-          totalAmount: completeBookingData.totalAmount || calculateTotalPrice(),
-          paymentId: paymentResponse.razorpay_payment_id,
-          status: 'confirmed',
-          paymentStatus: 'completed',
-          specialRequests: completeBookingData.specialRequests || formData.specialRequests || 'None',
-          discountAmount,
-          createdAt: completeBookingData.createdAt || new Date().toISOString()
-        };
+  const handlePaymentFailure = useCallback(async (error) => { try { if (bookingId) await handleBookingPaymentFailure(bookingId, error); setPaymentError(error.description || error.message || "Payment failed"); } catch { setPaymentError("Payment failed: " + (error.description || "Unknown error")); } }, [bookingId]);
 
-        if (emailBookingData.email) {
-          await emailService.sendConfirmationEmail(emailBookingData, trek);
-        }
-      } catch (emailError) {
-        console.error('Email error:', emailError);
-      }
-
-      setIsProcessingBooking(false);
-      setPaymentSuccess(true);
-      setShowSuccessAnimation(true);
-
-      setTimeout(() => {
-        navigate(`/booking-confirmation/${effectiveBookingId}`);
-      }, 3000);
-    } catch (error) {
-      console.error("Payment verification error:", error);
-      setPaymentError(error.message || "Failed to verify payment");
-      setIsProcessingBooking(false);
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  }, [bookingId, navigate, formData, primaryBooker, trek, calculateTotalPrice, discountAmount]);
-
-  const handlePaymentFailure = useCallback(async (error) => {
-    try {
-      if (bookingId) await handleBookingPaymentFailure(bookingId, error);
-      setPaymentError(error.description || error.message || "Payment failed");
-    } catch (err) {
-      console.error("Error handling payment failure:", err);
-      setPaymentError("Payment failed: " + (error.description || "Unknown error"));
-    }
-  }, [bookingId]);
-
-  // Global Razorpay handlers
   useEffect(() => {
-    const currentBookingId = bookingId;
-    if (currentBookingId) window.lastRazorpayBookingId = currentBookingId;
-
-    window.onRazorpaySuccess = function (response) {
-      const enhancedResponse = {
-        ...response,
-        bookingId: currentBookingId || response.bookingId || response.razorpay_order_id,
-        verifiedBookingId: currentBookingId,
-        orderId: currentBookingId || response.razorpay_order_id,
-        notes: { ...(response.notes || {}), bookingId: currentBookingId, backupId: currentBookingId }
-      };
-      handlePaymentSuccess(enhancedResponse);
-    };
-
-    window.onRazorpayFailure = function (response) {
-      handlePaymentFailure(response);
-    };
-
-    return () => {
-      window.onRazorpaySuccess = null;
-      window.onRazorpayFailure = null;
-    };
+    const cur = bookingId; if (cur) window.lastRazorpayBookingId = cur;
+    window.onRazorpaySuccess = (r) => handlePaymentSuccess({ ...r, bookingId: cur || r.bookingId || r.razorpay_order_id, verifiedBookingId: cur, orderId: cur || r.razorpay_order_id, notes: { ...(r.notes || {}), bookingId: cur, backupId: cur } });
+    window.onRazorpayFailure = handlePaymentFailure;
+    return () => { window.onRazorpaySuccess = null; window.onRazorpayFailure = null; };
   }, [bookingId, handlePaymentSuccess, handlePaymentFailure]);
 
-  // ============================================
-  // RENDER - Loading/Error states
-  // ============================================
-  if (loading) {
-    return (
-      <PageContainer>
-        <TopBar>
-          <BackButton onClick={() => navigate(-1)}>
-            <FiArrowLeft />
-          </BackButton>
-          <PageTitle>Loading...</PageTitle>
-        </TopBar>
-        <LoadingContainer>
-          <LoadingSpinner />
-          <LoadingText>Loading trek details...</LoadingText>
-        </LoadingContainer>
-      </PageContainer>
-    );
-  }
+  // ── Computed ──
+  const upfront = calculateUpfront();
+  const remaining = calculateRemaining();
+  const subtotal = basePrice * formData.totalParticipants;
 
-  if (fetchError || !trek) {
-    return (
-      <PageContainer>
-        <TopBar>
-          <BackButton onClick={() => navigate(-1)}>
-            <FiArrowLeft />
-          </BackButton>
-          <PageTitle>Error</PageTitle>
-        </TopBar>
-        <ErrorContainer>
-          <FiAlertCircle size={48} color={theme.primary} />
-          <ErrorTitle>{fetchError || 'Trek not found'}</ErrorTitle>
-          <ErrorText>We couldn't find the trek you're looking for.</ErrorText>
-          <GoBackButton onClick={() => navigate('/explore')}>
-            <FiArrowLeft />
-            Browse Treks
-          </GoBackButton>
-        </ErrorContainer>
-      </PageContainer>
-    );
-  }
+  if (loading) return <PageWrapper><LoadingContainer><LoadingSpinner /><LoadingText>Loading trek details...</LoadingText></LoadingContainer></PageWrapper>;
+  if (fetchError || !trek) return <PageWrapper><ErrorContainer><FiAlertCircle size={48} color={theme.primary} /><ErrorTitle>{fetchError || 'Trek not found'}</ErrorTitle><ErrorText>We couldn't find the trek you're looking for.</ErrorText><GoBackButton onClick={() => navigate('/explore')}><FiArrowLeft />Browse Treks</GoBackButton></ErrorContainer></PageWrapper>;
 
-  // ============================================
-  // MAIN RENDER
-  // ============================================
   return (
-    <PageContainer>
-      {/* Processing Overlay */}
-      {isProcessingBooking && (
-        <ProcessingOverlay>
-          <ProcessingContent>
-            <ProcessingSpinner />
-            <ProcessingTitle>Processing Your Booking</ProcessingTitle>
-            <ProcessingSubtitle>
-              Please wait while we confirm your payment...
-            </ProcessingSubtitle>
-          </ProcessingContent>
-        </ProcessingOverlay>
-      )}
+    <PageWrapper>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');`}</style>
 
-      {/* Success Animation */}
-      {showSuccessAnimation && (
-        <ProcessingOverlay>
-          <ProcessingContent>
-            <EnhancedSuccessMessage>
-              <ConfettiContainer>
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <ConfettiParticle
-                    key={i}
-                    color={['#ffeb3b', '#4caf50', '#2196f3', '#ff9800', '#e91e63'][i % 5]}
-                    delay={`${i * 0.2}s`}
-                    top={`${Math.random() * 100}%`}
-                    left={`${Math.random() * 100}%`}
-                  />
-                ))}
-              </ConfettiContainer>
-              <SuccessIcon><FiCheck size={40} /></SuccessIcon>
-              <SuccessTitle>🎉 Booking Confirmed!</SuccessTitle>
-              <SuccessSubtitle>Your adventure awaits!</SuccessSubtitle>
-              {activeCoupon && (
-                <CouponSuccessDiv>
-                  <strong>Coupon: {activeCoupon.code}</strong><br />
-                  You saved ₹{discountAmount.toFixed(2)}!
-                </CouponSuccessDiv>
-              )}
-            </EnhancedSuccessMessage>
-          </ProcessingContent>
-        </ProcessingOverlay>
-      )}
+      {isProcessingBooking && <ProcessingOverlay><ProcessingContent><ProcessingSpinner /><ProcessingTitle>Processing Your Booking</ProcessingTitle><ProcessingSubtitle>Please wait while we confirm your payment...</ProcessingSubtitle></ProcessingContent></ProcessingOverlay>}
+      {showSuccessAnimation && <ProcessingOverlay><ProcessingContent><EnhancedSuccessMessage><ConfettiContainer>{Array.from({ length: 15 }).map((_, i) => <ConfettiParticle key={i} color={['#ffeb3b','#4caf50','#2196f3','#ff9800','#e91e63'][i%5]} delay={`${i*0.2}s`} top={`${Math.random()*100}%`} left={`${Math.random()*100}%`} />)}</ConfettiContainer><SuccessIcon><FiCheck size={36} /></SuccessIcon><SuccessTitle>🎉 Booking Confirmed!</SuccessTitle><SuccessSubtitle>Your adventure awaits!</SuccessSubtitle>{activeCoupon && <CouponSuccessDiv><strong>Coupon: {activeCoupon.code}</strong><br/>You saved ₹{discountAmount.toFixed(2)}!</CouponSuccessDiv>}</EnhancedSuccessMessage></ProcessingContent></ProcessingOverlay>}
 
-      {/* Unavailable Date Popup */}
       {showUnavailableDatePopup && (
         <UnavailableDateOverlay onClick={handleCloseUnavailablePopup}>
-          <UnavailableDatePopup onClick={(e) => e.stopPropagation()}>
-            <PopupHeader>
-              <PopupIconContainer><FiCalendar /></PopupIconContainer>
-              <PopupTitle>Date Not Available</PopupTitle>
-            </PopupHeader>
+          <UnavailableDatePopup onClick={e => e.stopPropagation()}>
+            <PopupHeader><PopupIconContainer><FiCalendar /></PopupIconContainer><PopupTitle>Date Not Available</PopupTitle></PopupHeader>
             <PopupBody>
-              {selectedUnavailableDate && (
-                <PopupDateDisplay>
-                  <div className="date-label">You selected</div>
-                  <div className="date-value">
-                    {selectedUnavailableDate instanceof Date
-                      ? selectedUnavailableDate.toLocaleDateString('en-US', {
-                          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                        })
-                      : formatDateForDisplay(selectedUnavailableDate)
-                    }
-                  </div>
-                </PopupDateDisplay>
-              )}
-              <PopupMessage>
-                Sorry, this date is not available for <strong>{trek?.name}</strong>.
-                {getFutureAvailableDates().length > 0
-                  ? ' Please choose from the available dates below.'
-                  : getAvailableMonths().length > 0
-                    ? ' This trek is only available during specific months.'
-                    : ' Please contact us for availability.'
-                }
-              </PopupMessage>
-
-              {getFutureAvailableDates().length > 0 && (
-                <AvailableDatesSection>
-                  <AvailableDatesTitle><FiCheck />Available Dates</AvailableDatesTitle>
-                  <AvailableDatesGrid>
-                    {getFutureAvailableDates().map((dateStr) => {
-                      const formatted = formatDateForPopup(dateStr);
-                      return (
-                        <AvailableDateButton key={dateStr} onClick={() => handleSelectAvailableDate(dateStr)}>
-                          <span className="day">{formatted.day}</span>
-                          <span className="full-date">{formatted.full}</span>
-                        </AvailableDateButton>
-                      );
-                    })}
-                  </AvailableDatesGrid>
-                </AvailableDatesSection>
-              )}
-
-              {getFutureAvailableDates().length === 0 && getAvailableMonths().length > 0 && (
-                <AvailableMonthsSection>
-                  <AvailableMonthsTitle><FiCalendar />Available Months</AvailableMonthsTitle>
-                  <MonthsGrid>
-                    {getAvailableMonths().map((month) => (
-                      <MonthBadge key={month.index} isCurrentMonth={month.isCurrentMonth}>
-                        <span className="month-name">{month.shortName}</span>
-                        <span className="month-status">
-                          {month.isCurrentMonth ? '● Now' : month.isFutureMonth ? 'Available' : 'Next Year'}
-                        </span>
-                      </MonthBadge>
-                    ))}
-                  </MonthsGrid>
-                  <MonthsHelpText>
-                    <FiInfo />
-                    <span>Specific dates will be announced soon.
-                      {getNextAvailableMonth() && <> Next: <strong>{getNextAvailableMonth()}</strong></>}
-                    </span>
-                  </MonthsHelpText>
-                </AvailableMonthsSection>
-              )}
-
-              {getFutureAvailableDates().length === 0 && getAvailableMonths().length === 0 && (
-                <NoAvailableDatesMessage>
-                  <FiAlertCircle />
-                  <div>
-                    <strong>No availability information</strong>
-                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', fontWeight: 'normal' }}>
-                      Please contact us for available dates.
-                    </p>
-                  </div>
-                </NoAvailableDatesMessage>
-              )}
+              {selectedUnavailableDate && <PopupDateDisplay><div className="date-label">You selected</div><div className="date-value">{selectedUnavailableDate instanceof Date ? selectedUnavailableDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : formatDateForDisplay(selectedUnavailableDate)}</div></PopupDateDisplay>}
+              <PopupMessage>Sorry, this date is not available for <strong>{trek?.name}</strong>.{getFutureAvailableDates().length > 0 ? ' Choose from available dates below.' : getAvailableMonths().length > 0 ? ' Available during specific months.' : ' Contact us for availability.'}</PopupMessage>
+              {getFutureAvailableDates().length > 0 && <AvailableDatesSection><AvailableDatesTitle><FiCheck />Available Dates</AvailableDatesTitle><AvailableDatesGrid>{getFutureAvailableDates().map(ds => { const f = formatDateForPopup(ds); return <AvailableDateButton key={ds} onClick={() => handleSelectAvailableDate(ds)}><span className="day">{f.day}</span><span className="full-date">{f.full}</span></AvailableDateButton>; })}</AvailableDatesGrid></AvailableDatesSection>}
+              {getFutureAvailableDates().length === 0 && getAvailableMonths().length > 0 && <AvailableMonthsSection><AvailableMonthsTitle><FiCalendar />Available Months</AvailableMonthsTitle><MonthsGrid>{getAvailableMonths().map(m => <MonthBadge key={m.index} isCurrentMonth={m.isCurrentMonth}><span className="month-name">{m.shortName}</span><span className="month-status">{m.isCurrentMonth ? '● Now' : m.isFutureMonth ? 'Available' : 'Next Year'}</span></MonthBadge>)}</MonthsGrid><MonthsHelpText><FiInfo /><span>Specific dates announced soon.{getNextAvailableMonth() && <> Next: <strong>{getNextAvailableMonth()}</strong></>}</span></MonthsHelpText></AvailableMonthsSection>}
+              {getFutureAvailableDates().length === 0 && getAvailableMonths().length === 0 && <NoAvailableDatesMessage><FiAlertCircle /><div><strong>No availability info</strong><p style={{ margin: '0.5rem 0 0', fontSize: '0.82rem', fontWeight: 'normal' }}>Contact us for dates.</p></div></NoAvailableDatesMessage>}
             </PopupBody>
-            <PopupFooter>
-              <ClosePopupButton onClick={handleCloseUnavailablePopup}>Cancel</ClosePopupButton>
-              <ChooseAnotherButton onClick={handleChooseAnotherDate}>
-                <FiCalendar />Choose Another Date
-              </ChooseAnotherButton>
-            </PopupFooter>
+            <PopupFooter><ClosePopupButton onClick={handleCloseUnavailablePopup}>Cancel</ClosePopupButton><ChooseAnotherButton onClick={handleChooseAnotherDate}><FiCalendar />Choose Another Date</ChooseAnotherButton></PopupFooter>
           </UnavailableDatePopup>
         </UnavailableDateOverlay>
       )}
 
-      {/* TOP BAR */}
-      <TopBar>
-        <BackButton onClick={() => step === 2 ? setStep(1) : navigate(-1)}>
-          <FiArrowLeft />
-        </BackButton>
-        <PageTitle>
-          {step === 1 ? 'Book Your ' : 'Payment '}
-          <span>{step === 1 ? 'Adventure' : 'Details'}</span>
-        </PageTitle>
-      </TopBar>
+      <BookingCard>
+        <OrangePanel>
+          <FloatingCircle size="180px" top="-40px" right="-60px" opacity="0.08" />
+          <FloatingCircle size="100px" top="30%" left="-30px" opacity="0.06" />
+          <FloatingCircle size="60px" bottom="25%" right="20px" opacity="0.1" />
+          <CurvedDivider>
+            <svg className="desktop-curve" viewBox="0 0 80 800" preserveAspectRatio="none"><path d="M 40 0 Q 0 200 40 400 Q 80 600 40 800 L 80 800 L 80 0 Z" fill="#1a1d23" /></svg>
+            <svg className="mobile-curve" viewBox="0 0 390 40" preserveAspectRatio="none"><path d="M0,8 C45,34 105,-4 170,16 C235,36 300,2 390,10 L390,40 L0,40 Z" fill="#1a1d23" /></svg>
+          </CurvedDivider>
+          <FloatingImageContainer>
+            <TrekImageCard><img src={trek?.image} alt={trek?.name} /></TrekImageCard>
+          </FloatingImageContainer>
+          <OrangePanelInfo>
+            <PanelTrekName>{trek?.name}</PanelTrekName>
+            <PanelLocation>📍 {trek?.location}</PanelLocation>
+            <PriceTag>
+              <span className="currency">₹</span>
+              <span className="amount">{basePrice.toLocaleString('en-IN')}</span>
+              <span className="suffix">/ person</span>
+            </PriceTag>
+          </OrangePanelInfo>
+        </OrangePanel>
 
-      {/* CONTENT */}
-      <ContentContainer>
-        {/* Step Indicator */}
-        <StepIndicator>
-          <Step active={step === 1}>
-            <StepNumber active={step === 1} completed={step > 1}>
-              {step > 1 ? <FiCheck /> : '1'}
-            </StepNumber>
-            <span>Booking Details</span>
-          </Step>
-          <StepConnector completed={step > 1} />
-          <Step active={step === 2}>
-            <StepNumber active={step === 2}>2</StepNumber>
-            <span>Payment</span>
-          </Step>
-        </StepIndicator>
+        <DarkFormPanel>
+          <PanelHeader>
+            <HeaderTop>
+              <BackBtn onClick={() => step === 2 ? setStep(1) : navigate(-1)}><FiArrowLeft /></BackBtn>
+              <HeaderTitle>{step === 1 ? 'Book Your ' : 'Payment '}<span>{step === 1 ? 'Adventure' : 'Details'}</span></HeaderTitle>
+            </HeaderTop>
+            <div style={{ paddingBottom: '0.5rem' }}>
+              <StepTrack>
+                <StepItem><StepDot active={step === 1} completed={step > 1} /><StepLabel active={step === 1} completed={step > 1}>Details</StepLabel></StepItem>
+                <StepLine completed={step > 1} />
+                <StepItem><StepDot active={step === 2} completed={paymentSuccess} /><StepLabel active={step === 2} completed={paymentSuccess}>Payment</StepLabel></StepItem>
+              </StepTrack>
+            </div>
+          </PanelHeader>
 
-        {/* ============ STEP 1 ============ */}
-        {step === 1 && (
-          <Form onSubmit={handleSubmit}>
-            <FirstRow>
-              <TrekImageContainer>
-                <TrekImageLarge src={trek?.image} alt={trek?.name} />
-                <TrekImageOverlay>
-                  <h3>{trek?.name}</h3>
-                  <p>📍 {trek?.location}</p>
-                </TrekImageOverlay>
-              </TrekImageContainer>
+          <PanelBody>
+            {step === 1 && (
+              <Form onSubmit={handleSubmit}>
+                <TwoCardRow>
+                  <InteractiveCard isOpen={isDateCardOpen} onClick={handleDateCardToggle}>
+                    <CardHeader><CardLabel><FiCalendar />Trek Date</CardLabel>{formData.startDate && <SelectedBadge>✓</SelectedBadge>}</CardHeader>
+                    <CardValue>{formData.startDate ? new Date(formData.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Select date'}<CardArrow isOpen={isDateCardOpen} /></CardValue>
+                    <CardDropdown isOpen={isDateCardOpen} onClick={e => e.stopPropagation()}>
+                      <CalendarWrapper>
+                        <DatePicker selected={formData.startDate ? new Date(formData.startDate) : null} onChange={handleDateSelect} inline minDate={new Date()} openToDate={calendarOpenDate || getFirstAvailableDate()} renderDayContents={(day, date) => { if (!date) return <DayNumber>{day}</DayNumber>; const ds = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; if (date < new Date(new Date().setHours(0,0,0,0))) return <DayNumber>{day}</DayNumber>; return <DayWithDot><DayNumber>{day}</DayNumber><DayDot available={isDateAvailable(ds)} /></DayWithDot>; }} />
+                      </CalendarWrapper>
+                    </CardDropdown>
+                  </InteractiveCard>
+                  <InteractiveCard isOpen={isParticipantCardOpen} onClick={handleParticipantCardToggle}>
+                    <CardHeader><CardLabel><FiUser />People</CardLabel></CardHeader>
+                    <CardValue>{formData.totalParticipants} {formData.totalParticipants === 1 ? 'Person' : 'People'}<CardArrow isOpen={isParticipantCardOpen} /></CardValue>
+                    <CardDropdown isOpen={isParticipantCardOpen} onClick={e => e.stopPropagation()}>
+                      <ParticipantCounterWrapper>
+                        <CounterButton type="button" disabled={formData.totalParticipants <= 1} onClick={e => { e.stopPropagation(); if (formData.totalParticipants > 1) { handleParticipantSelect(formData.totalParticipants - 1); setIsParticipantCardOpen(true); } }}>−</CounterButton>
+                        <CounterDisplay><CounterNumber>{formData.totalParticipants}</CounterNumber><CounterLabel>{formData.totalParticipants === 1 ? 'Person' : 'People'}</CounterLabel></CounterDisplay>
+                        <CounterButton type="button" disabled={formData.totalParticipants >= 10} onClick={e => { e.stopPropagation(); if (formData.totalParticipants < 10) { handleParticipantSelect(formData.totalParticipants + 1); setIsParticipantCardOpen(true); } }}>+</CounterButton>
+                      </ParticipantCounterWrapper>
+                      <CounterInfoRow><span>Min: 1</span><span>₹{(basePrice * formData.totalParticipants).toLocaleString('en-IN')}</span><span>Max: 10</span></CounterInfoRow>
+                    </CardDropdown>
+                  </InteractiveCard>
+                </TwoCardRow>
+                {errors.startDate && <ErrorSpan style={{ marginTop: '-0.5rem' }}>{errors.startDate}</ErrorSpan>}
 
-              <RightColumn>
-                {/* Date Card */}
-                <InteractiveCard isOpen={isDateCardOpen} onClick={handleDateCardToggle}>
-                  <CardHeader>
-                    <CardLabel><FiCalendar />Trek Date</CardLabel>
-                    {formData.startDate && <SelectedBadge>Selected</SelectedBadge>}
-                  </CardHeader>
-                  <CardValue>
-                    {formData.startDate ? formatDateForDisplay(formData.startDate) : 'Click to select date'}
-                    <CardArrow isOpen={isDateCardOpen} />
-                  </CardValue>
-                  {/* ✅ REPLACE the old CardDropdown with this */}
-<CardDropdown isOpen={isDateCardOpen} onClick={e => e.stopPropagation()}>
+                <DetailBox isExpanded={currentExpandedBox === 'primary'} data-expanded={currentExpandedBox === 'primary'} onClick={() => currentExpandedBox !== 'primary' && handleBoxClick('primary')}>
+                  <DetailBoxHeader isExpanded={currentExpandedBox === 'primary'}>
+                    <DetailBoxTitle><FiUser />Your Details<StatusDot completed={completedBoxes.has('primary')} /></DetailBoxTitle>
+                    {currentExpandedBox !== 'primary' && <span style={{ fontSize: '0.8rem', color: theme.textLight }}>{completedBoxes.has('primary') ? '✓ Done' : ''}</span>}
+                  </DetailBoxHeader>
+                  <DetailBoxContent isExpanded={currentExpandedBox === 'primary'}>
+                    <FormGroup style={{ marginTop: 0 }}><Label>Full Name *</Label><Input type="text" value={primaryBooker.name} onChange={e => handlePrimaryBookerChange('name', e.target.value)} placeholder="Enter your full name" onClick={e => e.stopPropagation()} />{errors.primaryBooker_name && <ErrorSpan>{errors.primaryBooker_name}</ErrorSpan>}</FormGroup>
+                    <FieldRow>
+                      <FormGroup><Label>Email *</Label><Input type="email" value={primaryBooker.email} onChange={e => handlePrimaryBookerChange('email', e.target.value)} placeholder="your@email.com" onClick={e => e.stopPropagation()} />{errors.primaryBooker_email && <ErrorSpan>{errors.primaryBooker_email}</ErrorSpan>}</FormGroup>
+                      <FormGroup><Label>Contact *</Label><Input type="tel" value={primaryBooker.contactNumber} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,10); handlePrimaryBookerChange('contactNumber', v); }} placeholder="10-digit number" onClick={e => e.stopPropagation()} maxLength={10} style={{ borderColor: primaryBooker.contactNumber.length > 0 && primaryBooker.contactNumber.length !== 10 ? '#EF5350' : primaryBooker.contactNumber.length === 10 ? '#4CAF50' : undefined }} />{primaryBooker.contactNumber.length > 0 && primaryBooker.contactNumber.length !== 10 && <ErrorSpan>{primaryBooker.contactNumber.length < 10 ? `${10 - primaryBooker.contactNumber.length} more digit(s)` : 'Must be 10 digits'}</ErrorSpan>}{errors.primaryBooker_contactNumber && primaryBooker.contactNumber.length === 0 && <ErrorSpan>{errors.primaryBooker_contactNumber}</ErrorSpan>}</FormGroup>
+                    </FieldRow>
+                    <DoneButton type="button" onClick={e => { e.stopPropagation(); if (isBoxValid('primary')) handleDoneClick('primary'); }} disabled={!isBoxValid('primary')}><FiCheck />Done – Continue</DoneButton>
+                  </DetailBoxContent>
+                </DetailBox>
 
-<CalendarWrapper>
-  <DatePicker
-    selected={formData.startDate ? new Date(formData.startDate) : null}
-    onChange={(date) => handleDateSelect(date)}
-    inline
-    minDate={new Date()}
-    
-    openToDate={calendarOpenDate || getFirstAvailableDate()}
-    renderDayContents={(day, date) => {
-      if (!date) return <DayNumber>{day}</DayNumber>;
+                {participants.map((p, idx) => (
+                  <DetailBox key={p.participantId} isExpanded={currentExpandedBox === `participant-${idx}`} data-expanded={currentExpandedBox === `participant-${idx}`} isDisabled={!completedBoxes.has('primary')} onClick={() => { if (completedBoxes.has('primary') && currentExpandedBox !== `participant-${idx}`) handleBoxClick(`participant-${idx}`); }}>
+                    <DetailBoxHeader isExpanded={currentExpandedBox === `participant-${idx}`}>
+                      <DetailBoxTitle><FiUser />Participant {idx + 1} {p.isPrimaryBooker && '(You)'}<StatusDot completed={completedBoxes.has(`participant-${idx}`)} /></DetailBoxTitle>
+                      {currentExpandedBox !== `participant-${idx}` && <span style={{ fontSize: '0.8rem', color: theme.textLight }}>{completedBoxes.has(`participant-${idx}`) ? '✓ Done' : ''}</span>}
+                    </DetailBoxHeader>
+                    <DetailBoxContent isExpanded={currentExpandedBox === `participant-${idx}`}>
+                      <FieldRow style={{ marginTop: 0 }}>
+                        <FormGroup><Label>Full Name *</Label><Input value={p.name} onChange={e => handleParticipantChange(idx, 'name', e.target.value)} placeholder="Full name" disabled={p.isPrimaryBooker} onClick={e => e.stopPropagation()} />{errors[`participant_${idx}_name`] && <ErrorSpan>{errors[`participant_${idx}_name`]}</ErrorSpan>}</FormGroup>
+                        <FormGroup><Label>Email {!p.isPrimaryBooker && '(Optional)'}</Label><Input type="email" value={p.email} onChange={e => handleParticipantChange(idx, 'email', e.target.value)} placeholder="Email" disabled={p.isPrimaryBooker} onClick={e => e.stopPropagation()} /></FormGroup>
+                      </FieldRow>
+                      <FieldRow>
+                        <FormGroup><Label>Age (Optional)</Label><Input type="number" value={p.age} onChange={e => handleParticipantChange(idx, 'age', e.target.value)} placeholder="Age" min="1" max="100" onClick={e => e.stopPropagation()} /></FormGroup>
+                        <FormGroup><Label>Emergency Contact</Label><Input type="tel" value={p.emergencyContact} onChange={e => { const v = e.target.value.replace(/\D/g,'').slice(0,10); handleParticipantChange(idx, 'emergencyContact', v); }} placeholder="10-digit number" onClick={e => e.stopPropagation()} maxLength={10} style={{ borderColor: p.emergencyContact?.length > 0 && p.emergencyContact?.length !== 10 ? '#EF5350' : p.emergencyContact?.length === 10 ? '#4CAF50' : undefined }} />{p.emergencyContact?.length > 0 && p.emergencyContact?.length !== 10 && <ErrorSpan>{p.emergencyContact.length < 10 ? `${10 - p.emergencyContact.length} more digit(s)` : 'Must be 10 digits'}</ErrorSpan>}</FormGroup>
+                      </FieldRow>
+                      <div style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                        {idx > 0 && <DoneButton type="button" onClick={e => { e.stopPropagation(); handlePreviousBox(); }} style={{ background: 'transparent', color: theme.primary, border: `2px solid ${theme.primary}`, boxShadow: 'none' }}>← Previous</DoneButton>}
+                        <DoneButton type="button" onClick={e => { e.stopPropagation(); if (isBoxValid(`participant-${idx}`)) handleDoneClick(`participant-${idx}`); }} disabled={!isBoxValid(`participant-${idx}`)}><FiCheck />{idx === participants.length - 1 ? 'Done' : 'Next Participant'}</DoneButton>
+                      </div>
+                    </DetailBoxContent>
+                  </DetailBox>
+                ))}
 
-      const dateStr = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                <FormGroup><Label><FiMessageSquare />Special Requests (Optional)</Label><Textarea name="specialRequests" value={formData.specialRequests} onChange={handleChange} placeholder="Dietary requirements, accessibility needs..." /></FormGroup>
+              </Form>
+            )}
 
-      const isPast =
-        date < new Date(new Date().setHours(0, 0, 0, 0));
+            {step === 2 && (
+              <>
+                <SecurePaymentBanner><FiCheck />Secure Payment — Only 20% charged now</SecurePaymentBanner>
 
-      // No dot for past dates
-      if (isPast) {
-        return <DayNumber>{day}</DayNumber>;
-      }
-
-      const available = isDateAvailable(dateStr);
-
-      return (
-        <DayWithDot>
-          <DayNumber>{day}</DayNumber>
-          <DayDot available={available} />
-        </DayWithDot>
-      );
-    }}
-  />
-</CalendarWrapper>
-</CardDropdown>
-
-                </InteractiveCard>
-
-                {errors.startDate && (
-                  <ErrorSpan style={{ marginTop: '-0.5rem' }}>{errors.startDate}</ErrorSpan>
-                )}
-
-                {/* Participants Card */}
-                <InteractiveCard isOpen={isParticipantCardOpen} onClick={handleParticipantCardToggle}>
-                  <CardHeader>
-                    <CardLabel><FiUser />Participants</CardLabel>
-                    <SelectedBadge>{formData.totalParticipants} Selected</SelectedBadge>
-                  </CardHeader>
-                  <CardValue>
-                    {formData.totalParticipants} {formData.totalParticipants === 1 ? 'Person' : 'People'}
-                    <CardArrow isOpen={isParticipantCardOpen} />
-                  </CardValue>
-                 <CardDropdown isOpen={isParticipantCardOpen} onClick={e => e.stopPropagation()}>
-  <ParticipantCounterWrapper>
-    <CounterButton
-      type="button"
-      disabled={formData.totalParticipants <= 1}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (formData.totalParticipants > 1) {
-          handleParticipantSelect(formData.totalParticipants - 1);
-          // keep card open for further edits
-          setIsParticipantCardOpen(true);
-        }
-      }}
-    >
-      −
-    </CounterButton>
-
-    <CounterDisplay>
-      <CounterNumber>{formData.totalParticipants}</CounterNumber>
-      <CounterLabel>
-        {formData.totalParticipants === 1 ? 'Person' : 'People'}
-      </CounterLabel>
-    </CounterDisplay>
-
-    <CounterButton 
-      type="button"
-      disabled={formData.totalParticipants >= 10}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (formData.totalParticipants < 10) {
-          handleParticipantSelect(formData.totalParticipants + 1);
-          // keep card open for further edits
-          setIsParticipantCardOpen(true);
-        }
-      }}
-    >
-      +
-    </CounterButton>
-  </ParticipantCounterWrapper>
-
-  <CounterInfoRow>
-    <span>Min: 1</span>
-    <span>
-      Total: ₹{(
-        (trek?.numericPrice || 0) * formData.totalParticipants
-      ).toLocaleString('en-IN')}
-    </span>
-    <span>Max: 10</span>
-  </CounterInfoRow>
-</CardDropdown>
-                </InteractiveCard>
-              </RightColumn>
-            </FirstRow>
-
-            {/* Primary Booker Box */}
-            <DetailBox
-              isExpanded={currentExpandedBox === 'primary'}
-              data-expanded={currentExpandedBox === 'primary'}
-              onClick={() => currentExpandedBox !== 'primary' && handleBoxClick('primary')}
-            >
-              <DetailBoxHeader isExpanded={currentExpandedBox === 'primary'}>
-                <DetailBoxTitle>
-                  <FiUser />Your Details (Primary Booker)
-                  <StatusDot completed={completedBoxes.has('primary')} />
-                </DetailBoxTitle>
-                {currentExpandedBox !== 'primary' && (
-                  <span style={{ fontSize: '0.85rem', color: theme.darkGray }}>
-                    {completedBoxes.has('primary') ? '✓ Completed' : 'Click to fill'}
-                  </span>
-                )}
-              </DetailBoxHeader>
-
-              <DetailBoxContent isExpanded={currentExpandedBox === 'primary'}>
-                <FormGroup style={{ marginTop: 0 }}>
-                  <Label>Full Name *</Label>
-                  <Input
-                    type="text"
-                    value={primaryBooker.name}
-                    onChange={(e) => handlePrimaryBookerChange('name', e.target.value)}
-                    placeholder="Enter your full name"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  {errors.primaryBooker_name && <ErrorSpan>{errors.primaryBooker_name}</ErrorSpan>}
-                </FormGroup>
-
-                <FieldRow>
-                  <FormGroup>
-                    <Label>Email *</Label>
-                    <Input
-                      type="email"
-                      value={primaryBooker.email}
-                      onChange={(e) => handlePrimaryBookerChange('email', e.target.value)}
-                      placeholder="your.email@example.com"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    {errors.primaryBooker_email && <ErrorSpan>{errors.primaryBooker_email}</ErrorSpan>}
-                  </FormGroup>
-                  
-<FormGroup>
-  <Label>Contact Number *</Label>
-  <Input
-    type="tel"
-    value={primaryBooker.contactNumber}
-    onChange={(e) => {
-      const value = e.target.value.replace(/\D/g, '').slice(0, 10); // only digits, max 10
-      handlePrimaryBookerChange('contactNumber', value);
-    }}
-    placeholder="10-digit number"
-    onClick={(e) => e.stopPropagation()}
-    maxLength={10}
-    style={{
-      borderColor: primaryBooker.contactNumber.length > 0 && primaryBooker.contactNumber.length !== 10
-        ? '#EF5350'
-        : primaryBooker.contactNumber.length === 10
-          ? '#4CAF50'
-          : undefined
-    }}
-  />
-  {/* Show error ONLY when length is wrong and not empty */}
-  {primaryBooker.contactNumber.length > 0 && primaryBooker.contactNumber.length !== 10 && (
-    <ErrorSpan>
-      {primaryBooker.contactNumber.length < 10
-        ? `${10 - primaryBooker.contactNumber.length} more digit(s) needed`
-        : 'Contact number must be exactly 10 digits'
-      }
-    </ErrorSpan>
-  )}
-  {/* Show server/submit errors */}
-  {errors.primaryBooker_contactNumber && primaryBooker.contactNumber.length === 0 && (
-    <ErrorSpan>{errors.primaryBooker_contactNumber}</ErrorSpan>
-  )}
-</FormGroup>
-                </FieldRow>
-
-                <DoneButton
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isBoxValid('primary')) handleDoneClick('primary');
-                  }}
-                  disabled={!isBoxValid('primary')}
-                >
-                  <FiCheck />Done - Continue
-                </DoneButton>
-              </DetailBoxContent>
-            </DetailBox>
-
-            {/* Participant Boxes */}
-            {participants.map((participant, index) => (
-              <DetailBox
-                key={participant.participantId}
-                isExpanded={currentExpandedBox === `participant-${index}`}
-                data-expanded={currentExpandedBox === `participant-${index}`}
-                isDisabled={!completedBoxes.has('primary')}
-                onClick={() => {
-                  if (completedBoxes.has('primary') && currentExpandedBox !== `participant-${index}`) {
-                    handleBoxClick(`participant-${index}`);
-                  }
-                }}
-              >
-                <DetailBoxHeader isExpanded={currentExpandedBox === `participant-${index}`}>
-                  <DetailBoxTitle>
-                    <FiUser />Participant {index + 1} {participant.isPrimaryBooker && '(You)'}
-                    <StatusDot completed={completedBoxes.has(`participant-${index}`)} />
-                  </DetailBoxTitle>
-                  {currentExpandedBox !== `participant-${index}` && (
-                    <span style={{ fontSize: '0.85rem', color: theme.darkGray }}>
-                      {completedBoxes.has(`participant-${index}`) ? '✓ Completed' : 'Click to fill'}
-                    </span>
-                  )}
-                </DetailBoxHeader>
-
-                <DetailBoxContent isExpanded={currentExpandedBox === `participant-${index}`}>
-                  <FieldRow style={{ marginTop: 0 }}>
-                    <FormGroup>
-                      <Label>Full Name *</Label>
-                      <Input
-                        type="text"
-                        value={participant.name}
-                        onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
-                        placeholder="Full name"
-                        disabled={participant.isPrimaryBooker}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      {errors[`participant_${index}_name`] && <ErrorSpan>{errors[`participant_${index}_name`]}</ErrorSpan>}
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Email {!participant.isPrimaryBooker && '(Optional)'}</Label>
-                      <Input
-                        type="email"
-                        value={participant.email}
-                        onChange={(e) => handleParticipantChange(index, 'email', e.target.value)}
-                        placeholder="Email"
-                        disabled={participant.isPrimaryBooker}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </FormGroup>
-                  </FieldRow>
-
-                  <FieldRow>
-                    <FormGroup>
-                      <Label>Age (Optional)</Label>
-                      <Input
-                        type="number"
-                        value={participant.age}
-                        onChange={(e) => handleParticipantChange(index, 'age', e.target.value)}
-                        placeholder="Age"
-                        min="1" max="100"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </FormGroup>
-                    
-<FormGroup>
-  <Label>Emergency Contact (Optional)</Label>
-  <Input
-    type="tel"
-    value={participant.emergencyContact}
-    onChange={(e) => {
-      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-      handleParticipantChange(index, 'emergencyContact', value);
-    }}
-    placeholder="10-digit number"
-    onClick={(e) => e.stopPropagation()}
-    maxLength={10}
-    style={{
-      borderColor:
-        participant.emergencyContact?.length > 0 &&
-        participant.emergencyContact?.length !== 10
-          ? '#EF5350'
-          : participant.emergencyContact?.length === 10
-            ? '#4CAF50'
-            : undefined
-    }}
-  />
-  {/* Real-time digit count error */}
-  {participant.emergencyContact?.length > 0 &&
-    participant.emergencyContact?.length !== 10 && (
-      <ErrorSpan>
-        {participant.emergencyContact.length < 10
-          ? `${10 - participant.emergencyContact.length} more digit(s) needed`
-          : 'Must be exactly 10 digits'
-        }
-      </ErrorSpan>
-    )}
-</FormGroup>
-                  </FieldRow>
-
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-                    {index > 0 && (
-                      <DoneButton
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handlePreviousBox(); }}
-                        style={{
-                          background: 'transparent',
-                          color: theme.primary,
-                          border: `2px solid ${theme.primary}`,
-                          boxShadow: 'none'
-                        }}
-                      >
-                        ← Previous
-                      </DoneButton>
-                    )}
-                    <DoneButton
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isBoxValid(`participant-${index}`)) handleDoneClick(`participant-${index}`);
-                      }}
-                      disabled={!isBoxValid(`participant-${index}`)}
-                    >
-                      <FiCheck />
-                      {index === participants.length - 1 ? 'Done' : 'Next Participant'}
-                    </DoneButton>
+                <BookingSummaryCard>
+                  <SummaryHeader><SectionIcon><FiInfo /></SectionIcon><SummaryTitle>Booking Summary</SummaryTitle></SummaryHeader>
+                  <SummaryGrid>
+                    <SummaryItem><strong>Trek:</strong> {trek?.name}</SummaryItem>
+                    <SummaryItem><strong>Date:</strong> {formatDateForDisplay(formData.startDate)}</SummaryItem>
+                    <SummaryItem><strong>Participants:</strong> {formData.totalParticipants} person(s)</SummaryItem>
+                    <SummaryItem><strong>Price/Person:</strong> ₹{basePrice.toLocaleString('en-IN')}</SummaryItem>
+                  </SummaryGrid>
+                  <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: `1px solid ${theme.borderLight}` }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '600', color: theme.textLight, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Participants:</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>{participants.map((p, i) => <ParticipantChip key={i} isPrimary={p.isPrimaryBooker}>{p.name || `Participant ${i+1}`}{p.isPrimaryBooker && ' ✓'}</ParticipantChip>)}</div>
                   </div>
-                </DetailBoxContent>
-              </DetailBox>
-            ))}
+                </BookingSummaryCard>
 
-            {/* Special Requests */}
-            <FormGroup>
-              <Label><FiMessageSquare />Special Requests (Optional)</Label>
-              <Textarea
-                name="specialRequests"
-                value={formData.specialRequests}
-                onChange={handleChange}
-                placeholder="Any dietary requirements, accessibility needs, or other requests..."
-                style={{ minHeight: '80px' }}
-              />
-            </FormGroup>
-          </Form>
-        )}
+                <CouponSection orderTotal={basePrice * formData.totalParticipants} onApplyCoupon={handleApplyCoupon} />
 
-        {/* ============ STEP 2 ============ */}
-        {step === 2 && (
-          <>
-            
+                {/* ★ Payment Split Card */}
+                <PaymentSplitCard>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 700, color: theme.textDark, fontFamily: "'Sora', sans-serif" }}>
+                    <FiInfo color={theme.primary} /> How Payment Works
+                  </div>
+                  <SplitGrid>
+                    <SplitItem $active>
+                      <SplitPercent $active>20%</SplitPercent>
+                      <SplitLabel>Paid now online<br/>(Booking confirmation)</SplitLabel>
+                      <SplitAmount $active>₹{upfront.toLocaleString('en-IN')}</SplitAmount>
+                    </SplitItem>
+                    <SplitItem>
+                      <SplitPercent>80%</SplitPercent>
+                      <SplitLabel>Paid directly to<br/>the trek organizer</SplitLabel>
+                      <SplitAmount>₹{remaining.toLocaleString('en-IN')}</SplitAmount>
+                    </SplitItem>
+                  </SplitGrid>
+                  <SplitNote><FiInfo size={12} />A small processing fee (~2.5%) applies on the 20% paid via Razorpay. The remaining 80% is settled directly with the organizer on your trek day.</SplitNote>
+                </PaymentSplitCard>
 
-            <BookingSummaryCard>
-              <SummaryHeader>
-                <SectionIcon><FiInfo /></SectionIcon>
-                <SummaryTitle>Booking Summary</SummaryTitle>
-              </SummaryHeader>
-              <SummaryGrid>
-                <SummaryItem><strong>Trek:</strong> {trek?.name}</SummaryItem>
-                <SummaryItem><strong>Date:</strong> {formatDateForDisplay(formData.startDate)}</SummaryItem>
-                <SummaryItem><strong>Participants:</strong> {formData.totalParticipants} person(s)</SummaryItem>
-                <SummaryItem><strong>Price/Person:</strong> ₹{trek?.numericPrice}</SummaryItem>
-              </SummaryGrid>
-              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(51, 153, 204, 0.1)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#020202', marginBottom: '0.5rem' }}>
-                  Participants:
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                  {participants.map((p, i) => (
-                    <ParticipantChip key={i} isPrimary={p.isPrimaryBooker}>
-                      {p.name || `Participant ${i + 1}`}
-                      {p.isPrimaryBooker && ' ✓'}
-                    </ParticipantChip>
-                  ))}
-                </div>
-              </div>
-            </BookingSummaryCard>
+                <PriceSummary>
+                  <PriceItem><span>Trek Fee (per person)</span><span>₹{basePrice.toLocaleString('en-IN')}</span></PriceItem>
+                  <PriceItem><span>Participants</span><span>× {formData.totalParticipants}</span></PriceItem>
+                  {activeCoupon && <PriceItem style={{ color: '#6BCB77' }}><span>Discount ({activeCoupon.code})</span><span>−₹{discountAmount.toFixed(2)}</span></PriceItem>}
+                  <PriceItem><span>Total Trek Cost</span><span>₹{calculateTotalPrice().toLocaleString('en-IN')}</span></PriceItem>
+                  <PriceTotal><span>Pay Now (20%)</span><span>₹{upfront.toLocaleString('en-IN')}</span></PriceTotal>
+                </PriceSummary>
 
-            <CouponSection
-              orderTotal={trek?.numericPrice * formData.totalParticipants}
-              onApplyCoupon={handleApplyCoupon}
-              theme={{
-                mainColor: theme.primary,
-                hoverColor: theme.primaryDark,
-                gradientLight: `linear-gradient(135deg, ${theme.peach}, ${theme.cream})`,
-                textColor: '#212223',
-                inputBackground: theme.white,
-                inputBorder: theme.mediumGray,
-                inputText: '#111827',
-                placeholderColor: '#4a4949'
-              }}
-            />
-
-            <PriceSummary style={{
-              background: `linear-gradient(135deg, rgba(255, 87, 34, 0.06), rgba(255, 152, 0, 0.04))`,
-              borderColor: theme.primary,
-              padding: '1.5rem',
-              borderRadius: '16px',
-              marginTop: '1rem',
-              minHeight: '325px'
-            }}>
-              <PriceItem>
-                <span>Trek Fee (per person)</span>
-                <span>₹{trek?.numericPrice}</span>
-              </PriceItem>
-              <PriceItem>
-                <span>Number of Participants</span>
-                <span>× {formData.totalParticipants}</span>
-              </PriceItem>
-              <PriceItem>
-                <span>Subtotal</span>
-                <span>₹{(trek?.numericPrice * formData.totalParticipants).toFixed(2)}</span>
-              </PriceItem>
-              {activeCoupon && (
-                <PriceItem style={{ color: '#059669' }}>
-                  <span>Discount ({activeCoupon.code})</span>
-                  <span>-₹{discountAmount.toFixed(2)}</span>
-                </PriceItem>
-              )}
-              <PriceTotal>
-                <span>Total</span>
-                <span>₹{calculateTotalPrice()}</span>
-              </PriceTotal>
-            </PriceSummary>
-
-            {paymentError && (
-              <ErrorMessage><FiAlertCircle size={20} />{paymentError}</ErrorMessage>
+                {paymentError && <ErrorMessage><FiAlertCircle size={18} />{paymentError}</ErrorMessage>}
+                {paymentSuccess && <SuccessMessage><FiCheck size={18} /><div>Payment successful! Your booking is confirmed.{activeCoupon && <div style={{ marginTop: '8px' }}>Coupon: {activeCoupon.code} (Saved: ₹{discountAmount.toFixed(2)})</div>}</div></SuccessMessage>}
+              </>
             )}
-            {paymentSuccess && (
-              <SuccessMessage>
-                <FiCheck size={20} />
-                <div>
-                  Payment successful! Your booking is confirmed.
-                  {activeCoupon && (
-                    <div style={{ marginTop: '10px' }}>
-                      Coupon: {activeCoupon.code} (Saved: ₹{discountAmount.toFixed(2)})
-                    </div>
-                  )}
-                </div>
-              </SuccessMessage>
+          </PanelBody>
+
+          <PanelFooter>
+            {step === 1 ? (
+              <>
+                <CancelButton type="button" onClick={() => navigate(-1)}>Cancel</CancelButton>
+                <ProceedButton type="button" onClick={handleSubmit}>Continue to Payment <FiArrowLeft style={{ transform: 'rotate(180deg)' }} /></ProceedButton>
+              </>
+            ) : (
+              <>
+                <CancelButton type="button" onClick={() => setStep(1)}>← Back</CancelButton>
+                <PaymentButton type="button" onClick={handlePaymentProcess} disabled={isProcessingPayment || paymentSuccess}>
+                  {isProcessingPayment ? <LoadingIndicator /> : paymentSuccess ? <><FiCheck />Paid</> : <><FiLock />Pay ₹{upfront.toLocaleString('en-IN')} Now</>}
+                </PaymentButton>
+              </>
             )}
-          </>
-        )}
-      </ContentContainer>
-       <SecurePaymentBanner>
-              <FiCheck /> Secure Payment powered by Razorpay
-            </SecurePaymentBanner>
-      {/* STICKY FOOTER */}
-      <FooterContainer>
-        {step === 1 ? (
-          <>
-            <CancelButton type="button" onClick={() => navigate(-1)}>
-              Cancel
-            </CancelButton>
-            <ProceedButton type="button" onClick={handleSubmit}>
-              Continue to Payment
-            </ProceedButton>
-          </>
-        ) : (
-          <>
-            <CancelButton type="button" onClick={() => setStep(1)}>
-              Back
-            </CancelButton>
-            <PaymentButton
-              type="button"
-              onClick={handlePaymentProcess}
-              disabled={isProcessingPayment || paymentSuccess}
-            >
-              {isProcessingPayment ? (
-                <LoadingIndicator />
-              ) : paymentSuccess ? (
-                <><FiCheck />Paid</>
-              ) : (
-                <><FiCreditCard />Pay Now</>
-              )}
-            </PaymentButton>
-          </>
-        )}
-      </FooterContainer>
-    </PageContainer>
+          </PanelFooter>
+        </DarkFormPanel>
+      </BookingCard>
+    </PageWrapper>
   );
 };
 

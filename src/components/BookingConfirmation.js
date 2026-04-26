@@ -1,894 +1,1000 @@
 import React, { useEffect, useState } from 'react';
-import styled, { keyframes, css } from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiCheckCircle, FiMapPin, FiCalendar, FiUsers, FiCreditCard,
-  FiFileText, FiPhone, FiArrowRight, FiCompass, FiUser,
-  FiMail, FiAlertCircle, FiTag, FiClock, FiHome
+  FiFileText, FiPhone, FiArrowLeft, FiShare2,
+  FiShield, FiAlertCircle, FiUser, FiClock, FiInfo, FiChevronRight
 } from 'react-icons/fi';
 import BookingService from '../services/BookingService';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { T as theme } from '../theme.js';
 
-// ============================================
-// THEME
-// ============================================
-const T = {
-  primary: '#a53d1e',
-  primaryDark: '#ed4c1b',
-  primaryLight: '#FFAB91',
-  secondary: '#12182f',
-  accent: '#ff6b4d',
-  success: '#16a34a',
-  successLight: '#f0fdf4',
-  successBorder: '#bbf7d0',
-  white: '#FFFFFF',
-  cream: '#FFF8F0',
-  peach: '#FFE4D6',
-  lightGray: '#F8FAFC',
-  mediumGray: '#E2E8F0',
-  darkGray: '#64748B',
-  text: '#1E293B',
-  textLight: '#475569',
-};
-
-// ============================================
+// ─────────────────────────────────────────────
 // ANIMATIONS
-// ============================================
+// ─────────────────────────────────────────────
 const fadeUp = keyframes`
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 `;
-
-const scaleIn = keyframes`
-  0%   { opacity: 0; transform: scale(0.5); }
-  70%  { transform: scale(1.08); }
-  100% { opacity: 1; transform: scale(1); }
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to   { opacity: 1; }
 `;
-
-const ringPulse = keyframes`
-  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(22,163,74,0.4); }
-  50%  { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(22,163,74,0); }
-  100% { transform: scale(1);    box-shadow: 0 0 0 0   rgba(22,163,74,0); }
+const spin = keyframes`
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 `;
-
-const shimmerSlide = keyframes`
+const shimmer = keyframes`
   0%   { background-position: -600px 0; }
   100% { background-position:  600px 0; }
 `;
-
-const tickerDrop = keyframes`
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+const popIn = keyframes`
+  0%   { opacity: 0; transform: scale(0.88); }
+  60%  { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+`;
+const successRing = keyframes`
+  0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.5); }
+  70%  { box-shadow: 0 0 0 16px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0   rgba(34,197,94,0); }
+`;
+const glowPulse = keyframes`
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
 `;
 
-const spin = keyframes`
-  to { transform: rotate(360deg); }
-`;
-
-const confettiFall = keyframes`
-  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
-  100% { transform: translateY(80px)  rotate(720deg); opacity: 0; }
-`;
-
-// ============================================
-// PAGE SHELL
-// ============================================
-const Page = styled.div`
+// ─────────────────────────────────────────────
+// LAYOUT
+// ─────────────────────────────────────────────
+const PageWrapper = styled.div`
   min-height: 100vh;
-  background: linear-gradient(160deg, ${T.cream} 0%, ${T.white} 45%, ${T.peach} 100%);
-  padding: 0 0 5rem;
+  background: ${theme.bg};
+  color: ${theme.textPrimary};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 130px;
+  @media (max-width: 600px) { padding-bottom: 160px; }
 `;
 
-// Top success banner
-const SuccessBanner = styled.div`
-  background: linear-gradient(135deg, ${T.secondary} 0%, #1e2a4a 100%);
-  padding: 3rem 1.5rem 5rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, ${T.primary}, ${T.accent}, ${T.primary});
-    background-size: 200% 100%;
-    animation: ${shimmerSlide} 3s linear infinite;
-  }
+// ─────────────────────────────────────────────
+// ★ PREMIUM TOP BAR
+// ─────────────────────────────────────────────
+const TopBar = styled.header`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(10,10,10,0.96) 0%, rgba(10,10,10,0.88) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  padding: 0;
+  height: auto;
 `;
 
-const BannerPattern = styled.div`
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 15% 50%, rgba(165,61,30,0.15) 0%, transparent 45%),
-    radial-gradient(circle at 85% 30%, rgba(255,107,77,0.1) 0%, transparent 40%);
-  pointer-events: none;
+const TopBarInner = styled.div`
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  @media (max-width: 480px) { padding: 0.625rem 1rem; gap: 0.625rem; }
 `;
 
-// Confetti particles
-const Dot = styled.div`
-  position: absolute;
-  width: ${p => p.$s || 8}px;
-  height: ${p => p.$s || 8}px;
-  border-radius: 50%;
-  background: ${p => p.$c || T.primaryLight};
-  top: ${p => p.$top}%;
-  left: ${p => p.$left}%;
-  animation: ${confettiFall} ${p => p.$dur || 2}s ease-out ${p => p.$delay || 0}s both;
-  pointer-events: none;
-`;
-
-const CheckCircle = styled.div`
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${T.success}, #15803d);
+const BackBtn = styled.button`
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: ${theme.textPrimary};
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1.5rem;
-  animation: ${scaleIn} 0.6s cubic-bezier(0.175,0.885,0.32,1.275) 0.1s both,
-             ${ringPulse} 2.5s ease-in-out 0.8s infinite;
-  box-shadow: 0 8px 28px rgba(22,163,74,0.35);
-  color: white;
-`;
-
-const BannerTitle = styled.h1`
-  font-size: clamp(1.8rem, 5vw, 2.6rem);
-  font-weight: 800;
-  color: ${T.white};
-  margin: 0 0 0.5rem;
-  letter-spacing: -0.02em;
-  animation: ${fadeUp} 0.6s ease-out 0.3s both;
-`;
-
-const BannerSub = styled.p`
-  font-size: 1.05rem;
-  color: rgba(255,255,255,0.7);
-  margin: 0 0 1.5rem;
-  animation: ${fadeUp} 0.6s ease-out 0.4s both;
-`;
-
-const BookingBadge = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255,255,255,0.1);
-  border: 1.5px solid rgba(255,255,255,0.2);
-  border-radius: 50px;
-  padding: 0.5rem 1.25rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: ${T.primaryLight};
-  letter-spacing: 1.5px;
-  animation: ${fadeUp} 0.6s ease-out 0.5s both;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-    background-size: 600px 100%;
-    animation: ${shimmerSlide} 2.5s linear infinite;
-  }
-`;
-
-// ============================================
-// CONTENT AREA
-// ============================================
-const ContentWrap = styled.div`
-  max-width: 860px;
-  margin: -2.5rem auto 0;
-  padding: 0 1.25rem;
-  position: relative;
-  z-index: 2;
-`;
-
-// ============================================
-// TICKET CARD
-// ============================================
-const TicketCard = styled.div`
-  background: ${T.white};
-  border-radius: 20px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 20px 40px rgba(0,0,0,0.08);
-  margin-bottom: 1.25rem;
-  overflow: hidden;
-  animation: ${fadeUp} 0.5s ease-out ${p => p.$delay || '0s'} both;
-`;
-
-const CardBand = styled.div`
-  background: ${p => p.$green
-    ? `linear-gradient(135deg, ${T.success}, #15803d)`
-    : `linear-gradient(135deg, ${T.secondary}, #1e2a4a)`};
-  padding: 0.85rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  color: white;
-`;
-
-const BandLabel = styled.span`
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.9;
-`;
-
-const CardBody = styled.div`
-  padding: 1.5rem;
-
-  @media (max-width: 480px) {
-    padding: 1.1rem;
-  }
-`;
-
-// ============================================
-// TREK HERO INSIDE CARD
-// ============================================
-const TrekHero = styled.div`
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
-  height: 200px;
-  margin-bottom: 1.25rem;
-
-  img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%);
-  }
-`;
-
-const TrekHeroText = styled.div`
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
-  z-index: 2;
-  color: white;
-
-  h3 { margin: 0 0 0.2rem; font-size: 1.2rem; font-weight: 700; }
-  span { font-size: 0.82rem; opacity: 0.85; display: flex; align-items: center; gap: 0.3rem; }
-`;
-
-// ============================================
-// DETAIL GRID
-// ============================================
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.85rem;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.65rem;
-  }
-`;
-
-const Cell = styled.div`
-  background: ${T.lightGray};
-  border: 1.5px solid ${T.mediumGray};
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
-  transition: border-color 0.2s, transform 0.2s;
-
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
   &:hover {
-    border-color: ${T.primaryLight};
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark});
+    border-color: ${theme.primary};
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(249,115,22,0.3);
   }
+  &:active { transform: scale(0.97); }
+  @media (max-width: 480px) { width: 36px; height: 36px; border-radius: 10px; }
 `;
 
-const CellLabel = styled.div`
-  font-size: 0.72rem;
+const TopBarContent = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+`;
+
+const TopBarLabel = styled.div`
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: ${T.darkGray};
-  margin-bottom: 0.35rem;
+  letter-spacing: 0.12em;
+  color: ${theme.success};
+  line-height: 1;
+  margin-bottom: 0.2rem;
   display: flex;
   align-items: center;
   gap: 0.35rem;
-
-  svg { color: ${T.primary}; }
+  @media (max-width: 480px) { font-size: 0.58rem; }
 `;
 
-const CellValue = styled.div`
-  font-size: 0.95rem;
+const TopBarTitle = styled.h1`
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: ${theme.textPrimary};
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  @media (max-width: 480px) { font-size: 1.08rem; }
+`;
+
+const TopBarTitleAccent = styled.span`
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 60%, #86efac 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+`;
+
+const TopBarRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+`;
+
+const TopBarBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 100px;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: ${T.text};
-  word-break: break-word;
-
-  &.success { color: ${T.success}; }
-  &.warning { color: #d97706; }
+  color: ${theme.success};
+  white-space: nowrap;
+  svg { font-size: 0.72rem; animation: ${glowPulse} 2s ease-in-out infinite; }
+  @media (max-width: 480px) {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.6rem;
+    span { display: none; }
+  }
 `;
 
-// ============================================
+const IconBtn = styled.button`
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid ${theme.border}; background: rgba(255,255,255,0.04);
+  color: ${theme.textSecondary}; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s ease;
+  &:hover { color: ${theme.primary}; border-color: ${theme.primary}; }
+`;
+
+const PageBody = styled.div`
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  @media (max-width: 768px) { padding: 1.25rem 1rem; }
+  @media (max-width: 480px) { padding: 1rem 0.875rem; }
+`;
+
+// ─────────────────────────────────────────────
+// SUCCESS HERO
+// ─────────────────────────────────────────────
+const SuccessHero = styled.div`
+  text-align: center;
+  padding: 2.5rem 1rem;
+  animation: ${fadeUp} 0.6s ease both;
+`;
+
+const SuccessCircle = styled.div`
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16803d);
+  display: flex; align-items: center; justify-content: center;
+  color: white; margin: 0 auto 1.5rem;
+  animation: ${popIn} 0.6s ease, ${successRing} 2s ease 0.6s;
+  box-shadow: 0 8px 28px rgba(34,197,94,0.35);
+`;
+
+const SuccessTitle = styled.h1`
+  font-size: 1.875rem; font-weight: 800; color: ${theme.textPrimary};
+  letter-spacing: -0.02em; margin: 0 0 0.5rem;
+  @media (max-width: 480px) { font-size: 1.5rem; }
+`;
+
+const SuccessSubtitle = styled.p`
+  font-size: 1rem; color: ${theme.textMuted}; margin: 0 0 1.25rem; line-height: 1.6;
+`;
+
+const BookingIdPill = styled.div`
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2);
+  border-radius: 100px; font-family: 'Courier New', monospace;
+  font-size: 0.88rem; font-weight: 700; color: ${theme.primary};
+  letter-spacing: 0.05em; position: relative; overflow: hidden;
+  &::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    animation: ${shimmer} 2s infinite; }
+`;
+
+// ─────────────────────────────────────────────
+// PAYMENT STATUS BANNER
+// ─────────────────────────────────────────────
+const PayStatusBanner = styled.div`
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+  margin-bottom: 1.5rem; animation: ${fadeUp} 0.5s ease 0.15s both;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+`;
+
+const PayStatusItem = styled.div`
+  padding: 1rem 1.25rem; border-radius: 12px;
+  border: 1px solid ${p => p.$success ? 'rgba(34,197,94,0.25)' : theme.border};
+  background: ${p => p.$success ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)'};
+`;
+
+const PayStatusLabel = styled.div`
+  font-size: 0.72rem; font-weight: 600; color: ${theme.textMuted};
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;
+  display: flex; align-items: center; gap: 0.35rem;
+  svg { font-size: 0.8rem; }
+`;
+
+const PayStatusValue = styled.div`
+  font-size: 1.2rem; font-weight: 800;
+  color: ${p => p.$success ? theme.success : theme.textPrimary};
+  line-height: 1; margin-bottom: 0.2rem;
+`;
+
+const PayStatusNote = styled.div`
+  font-size: 0.72rem; color: ${theme.textMuted}; line-height: 1.4;
+`;
+
+// ─────────────────────────────────────────────
+// CARDS
+// ─────────────────────────────────────────────
+const Card = styled.div`
+  background: ${theme.bgCard}; border: 1px solid ${theme.border}; border-radius: 16px;
+  overflow: hidden; margin-bottom: 1.25rem;
+  animation: ${fadeUp} 0.5s ease ${p => p.$delay || '0s'} both;
+  transition: border-color 0.25s ease;
+  &:hover { border-color: rgba(255,255,255,0.12); }
+  @media (max-width: 480px) { border-radius: 12px; }
+`;
+
+const CardHead = styled.div`
+  padding: 1rem 1.25rem; border-bottom: 1px solid ${theme.border};
+  display: flex; align-items: center; gap: 0.75rem; position: relative;
+  &::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, ${theme.primary}, ${theme.primaryDark}); opacity: 0.6; }
+`;
+
+const CardIconWrap = styled.div`
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(249,115,22,0.1); color: ${theme.primary};
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+`;
+
+const CardTitle = styled.h3`
+  font-size: 0.95rem; font-weight: 700; color: ${theme.textPrimary}; margin: 0;
+  @media (max-width: 480px) { font-size: 0.88rem; }
+`;
+
+const CardBody = styled.div`
+  padding: 1.25rem;
+  @media (max-width: 480px) { padding: 1rem; }
+`;
+
+// ─────────────────────────────────────────────
+// DETAIL GRID
+// ─────────────────────────────────────────────
+const DetailGrid = styled.div`
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.875rem;
+  @media (max-width: 480px) { grid-template-columns: 1fr; gap: 0.625rem; }
+`;
+
+const DetailItem = styled.div`
+  padding: 0.875rem; background: rgba(255,255,255,0.03);
+  border: 1px solid ${theme.border}; border-radius: 10px; transition: all 0.2s ease;
+  &:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+`;
+
+const DetailLabel = styled.div`
+  font-size: 0.7rem; font-weight: 600; color: ${theme.textMuted};
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;
+`;
+
+const DetailValue = styled.div`
+  font-size: 0.92rem; font-weight: 600; color: ${theme.textPrimary};
+  line-height: 1.4; word-break: break-word;
+`;
+
+// ─────────────────────────────────────────────
+// TREK IMAGE
+// ─────────────────────────────────────────────
+const TrekImageWrap = styled.div`
+  border-radius: 12px; overflow: hidden; height: 200px;
+  margin-bottom: 1.25rem; position: relative;
+  @media (max-width: 480px) { height: 160px; }
+`;
+
+const TrekImage = styled.img`
+  width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;
+  &:hover { transform: scale(1.04); }
+`;
+
+const TrekImageOverlay = styled.div`
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
+`;
+
+// ─────────────────────────────────────────────
 // PARTICIPANT CARDS
-// ============================================
+// ─────────────────────────────────────────────
 const ParticipantGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.85rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.875rem;
+  @media (max-width: 480px) { grid-template-columns: 1fr; gap: 0.625rem; }
 `;
 
 const ParticipantCard = styled.div`
-  background: ${p => p.$primary ? `linear-gradient(135deg, ${T.peach}, ${T.cream})` : T.lightGray};
-  border: 1.5px solid ${p => p.$primary ? T.primaryLight : T.mediumGray};
-  border-radius: 14px;
-  padding: 1rem 1.1rem;
-  position: relative;
-  animation: ${tickerDrop} 0.4s ease-out ${p => p.$delay || '0s'} both;
+  padding: 1rem; background: rgba(255,255,255,0.03);
+  border: 1px solid ${p => p.$primary ? 'rgba(249,115,22,0.25)' : theme.border};
+  border-radius: 12px; position: relative; transition: all 0.2s ease;
+  &:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); }
 `;
 
 const PrimaryBadge = styled.span`
-  position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
-  background: linear-gradient(135deg, ${T.primary}, ${T.primaryDark});
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0.2rem 0.55rem;
-  border-radius: 20px;
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark});
+  color: white; font-size: 0.65rem; font-weight: 700;
+  padding: 0.2rem 0.5rem; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.03em;
 `;
 
-const PName = styled.div`
-  font-size: 1rem;
-  font-weight: 700;
-  color: ${T.text};
-  margin-bottom: 0.5rem;
-  padding-right: ${p => p.$hasBadge ? '5rem' : '0'};
+const ParticipantNum = styled.div`
+  font-size: 0.72rem; font-weight: 600; color: ${theme.textMuted};
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem;
 `;
 
-const PMeta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: ${T.textLight};
-  margin-bottom: 0.25rem;
+const ParticipantName = styled.div`
+  font-size: 1rem; font-weight: 700; color: ${theme.textPrimary};
+  margin-bottom: 0.625rem; padding-right: ${p => p.$hasBadge ? '4rem' : 0};
+`;
+
+const ParticipantDetail = styled.div`
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; color: ${theme.textMuted}; margin-bottom: 0.3rem;
   word-break: break-word;
-
-  svg { color: ${T.primary}; flex-shrink: 0; }
+  &:last-child { margin-bottom: 0; }
+  svg { flex-shrink: 0; font-size: 0.8rem; }
 `;
 
-const PNum = styled.div`
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: ${T.darkGray};
-  margin-bottom: 0.4rem;
+// ─────────────────────────────────────────────
+// PAYMENT SPLIT
+// ─────────────────────────────────────────────
+const SplitCard = styled.div`
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
 `;
 
-// ============================================
-// PAYMENT SUMMARY STRIP
-// ============================================
-const PaymentStrip = styled.div`
-  background: linear-gradient(135deg, rgba(165,61,30,0.06), rgba(255,107,77,0.04));
-  border: 1.5px solid ${T.peach};
-  border-radius: 14px;
-  padding: 1.1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 0.85rem;
-`;
-
-const PayLabel = styled.span`
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: ${T.textLight};
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  svg { color: ${T.primary}; }
-`;
-
-const PayValue = styled.span`
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: ${T.text};
-  word-break: break-all;
-
-  &.big {
-    font-size: 1.3rem;
-    color: ${T.primary};
-  }
-  &.success { color: ${T.success}; }
-  &.discount { color: ${T.success}; }
-`;
-
-const TotalStrip = styled(PaymentStrip)`
-  background: linear-gradient(135deg, ${T.secondary} 0%, #1e2a4a 100%);
-  border-color: transparent;
-  border-radius: 14px;
-
-  ${PayLabel} { color: rgba(255,255,255,0.75); svg { color: ${T.primaryLight}; } }
-  ${PayValue} { color: white; &.big { color: ${T.primaryLight}; font-size: 1.5rem; } }
-`;
-
-// ============================================
-// CTA BUTTONS
-// ============================================
-const CTARow = styled.div`
-  display: flex;
-  gap: 0.85rem;
-  margin-top: 1.5rem;
-
-  @media (max-width: 540px) {
-    flex-direction: column;
-  }
-`;
-
-const CTABtn = styled.button`
-  flex: 1;
-  padding: 0.95rem 1.25rem;
+const SplitItem = styled.div`
+  padding: 1rem;
+  background: ${p => p.$paid ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)'};
+  border: 1px solid ${p => p.$paid ? 'rgba(34,197,94,0.2)' : theme.border};
   border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
+`;
+
+const SplitPercent = styled.div`
+  font-size: 1.5rem; font-weight: 800;
+  color: ${p => p.$paid ? theme.success : theme.textSecondary};
+  line-height: 1; margin-bottom: 0.25rem;
+`;
+
+const SplitLabel = styled.div`
+  font-size: 0.75rem; color: ${theme.textMuted}; line-height: 1.4; margin-bottom: 0.4rem;
+`;
+
+const SplitAmount = styled.div`
+  font-size: 1rem; font-weight: 700;
+  color: ${p => p.$paid ? theme.success : theme.textPrimary};
+`;
+
+const SplitStatus = styled.span`
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem;
+  border-radius: 20px; margin-top: 0.4rem;
+  background: ${p => p.$paid ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)'};
+  color: ${p => p.$paid ? theme.success : theme.textMuted};
+  border: 1px solid ${p => p.$paid ? 'rgba(34,197,94,0.25)' : theme.border};
+`;
+
+// ─────────────────────────────────────────────
+// STATUS BADGE
+// ─────────────────────────────────────────────
+const StatusBadge = styled.span`
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.3rem 0.75rem; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 700;
+  background: ${p => p.$type==='success' ? 'rgba(34,197,94,0.12)' : p.$type==='warning' ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.06)'};
+  color: ${p => p.$type==='success' ? theme.success : p.$type==='warning' ? theme.primary : theme.textMuted};
+  border: 1px solid ${p => p.$type==='success' ? 'rgba(34,197,94,0.25)' : p.$type==='warning' ? 'rgba(249,115,22,0.25)' : theme.border};
+`;
+
+// ─────────────────────────────────────────────
+// TRUST NOTE — proper styled component (no inline animation)
+// ─────────────────────────────────────────────
+const TrustNote = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.25s ease;
-  letter-spacing: 0.02em;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: ${theme.textMuted};
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+  animation: ${fadeUp} 0.5s ease 0.35s both;
+`;
 
-  ${p => p.$primary ? css`
-    background: linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%);
-    border: none;
-    color: white;
-    box-shadow: 0 4px 14px rgba(165,61,30,0.3);
-    &:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(165,61,30,0.4); }
-  ` : css`
-    background: ${T.white};
-    border: 2px solid ${T.mediumGray};
-    color: ${T.text};
-    &:hover { border-color: ${T.primaryLight}; background: ${T.cream}; transform: translateY(-2px); }
-  `}
+// ─────────────────────────────────────────────
+// ★ PREMIUM COMPACT FOOTER
+// ─────────────────────────────────────────────
+const ConfirmFooter = styled.div`
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+  background: linear-gradient(180deg, rgba(18,18,18,0.85) 0%, rgba(10,10,10,0.98) 100%);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.4), 0 -1px 0 rgba(249,115,22,0.15);
+  padding: 0.875rem 1.5rem; display: flex; justify-content: center;
+  @media (max-width: 480px) { padding: 0.75rem 1rem; }
+`;
 
+const ConfirmFooterInner = styled.div`
+  display: flex; align-items: center; gap: 1.25rem;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 0.75rem 0.875rem 0.75rem 1.25rem;
+  width: 100%; max-width: 680px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+  @media (max-width: 600px) {
+    flex-direction: column; gap: 0.625rem; padding: 0.875rem 1rem;
+    border-radius: 14px; max-width: 100%;
+  }
+`;
+
+const ConfirmFooterInfo = styled.div`
+  flex: 1; min-width: 0;
+  @media (max-width: 600px) { width: 100%; text-align: center; }
+`;
+
+const ConfirmFooterTitle = styled.div`
+  font-size: 0.7rem; font-weight: 600; color: ${theme.textMuted};
+  margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.06em;
+`;
+
+const ConfirmFooterId = styled.div`
+  font-size: 0.82rem; font-weight: 700; color: ${theme.textPrimary};
+  font-family: 'Courier New', monospace; letter-spacing: 0.03em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+`;
+
+const ConfirmFooterStatus = styled.div`
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.72rem; font-weight: 700; color: ${theme.success}; margin-top: 0.2rem;
+  svg { font-size: 0.75rem; }
+`;
+
+const ConfirmFooterDivider = styled.div`
+  width: 1px; height: 36px; background: rgba(255,255,255,0.08); flex-shrink: 0;
+  @media (max-width: 600px) { display: none; }
+`;
+
+const ConfirmFooterBtns = styled.div`
+  display: flex; gap: 0.625rem; flex-shrink: 0;
+  @media (max-width: 600px) { width: 100%; }
+`;
+
+const BtnConfirmSecondary = styled.button`
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.8rem 1.25rem; border-radius: 10px;
+  border: 1px solid ${theme.border}; background: rgba(255,255,255,0.04);
+  color: ${theme.textSecondary}; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+  &:hover { background: rgba(255,255,255,0.08); border-color: ${theme.textSecondary}; color: ${theme.textPrimary}; }
+  @media (max-width: 600px) { flex: 1; padding: 0.875rem 1rem; font-size: 0.82rem; }
+`;
+
+const BtnConfirmPrimary = styled.button`
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.8rem 1.5rem; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark});
+  color: white; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(249,115,22,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  position: relative; overflow: hidden;
+  &::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    transition: left 0.5s ease; }
+  &:hover::before { left: 100%; }
+  &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(249,115,22,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
   &:active { transform: translateY(0); }
+  @media (max-width: 600px) { flex: 1.5; padding: 0.875rem 1rem; font-size: 0.85rem; }
 `;
 
-// ============================================
+// ─────────────────────────────────────────────
 // LOADING / ERROR
-// ============================================
-const CenterBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 1rem;
-  text-align: center;
-  padding: 2rem;
+// ─────────────────────────────────────────────
+const FullCenter = styled.div`
+  min-height: 100vh; background: ${theme.bg}; display: flex; align-items: center;
+  justify-content: center; flex-direction: column; gap: 1.25rem; text-align: center; padding: 2rem;
 `;
 
-const Spinner = styled.div`
-  width: 48px;
-  height: 48px;
-  border: 4px solid ${T.peach};
-  border-top-color: ${T.primary};
-  border-radius: 50%;
-  animation: ${spin} 0.9s linear infinite;
+const BigSpinner = styled.div`
+  width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.07);
+  border-top-color: ${theme.primary}; border-radius: 50%; animation: ${spin} 0.8s linear infinite;
 `;
 
-const LoadLabel = styled.p`
-  color: ${T.darkGray};
-  font-size: 1rem;
-  font-weight: 500;
-`;
-
-const ErrCard = styled.div`
-  background: ${T.white};
-  border: 2px solid #fecaca;
-  border-radius: 16px;
-  padding: 2rem;
-  max-width: 480px;
-  text-align: center;
-  animation: ${fadeUp} 0.4s ease-out;
-
-  h3 { color: ${T.text}; font-size: 1.2rem; margin: 0.75rem 0 0.5rem; }
-  p  { color: ${T.textLight}; font-size: 0.9rem; margin: 0 0 1.5rem; }
-`;
-
-// ============================================
+// ─────────────────────────────────────────────
 // HELPERS
-// ============================================
+// ─────────────────────────────────────────────
 const formatDate = (val) => {
   if (!val) return 'Not specified';
   try {
-    if (val?.toDate) return val.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    return new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (typeof val === 'string') return new Date(val).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (val.toDate) return val.toDate().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (val instanceof Date) return val.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return String(val);
   } catch { return String(val); }
 };
 
-const formatAmt = (val) => {
-  if (!val && val !== 0) return null;
-  const n = typeof val === 'number' ? val : parseFloat(val);
-  return isNaN(n) ? null : n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-
-const participantCount = (booking) => {
+const getParticipantCount = (booking) => {
   if (Array.isArray(booking.participants)) return booking.participants.length;
   if (booking.totalParticipants) return Number(booking.totalParticipants);
   if (booking.numberOfParticipants) return Number(booking.numberOfParticipants);
-  if (booking.participants) return Number(booking.participants);
   return 1;
 };
 
-// confetti config
-const CONFETTI = [
-  { c: T.primaryLight, s: 10, top: 10, left: 20, dur: 2.2, delay: 0.1 },
-  { c: '#fbbf24',      s: 7,  top: 5,  left: 50, dur: 2.5, delay: 0.3 },
-  { c: T.successBorder,s: 9, top: 8,  left: 75, dur: 2.0, delay: 0.2 },
-  { c: T.accent,       s: 6,  top: 15, left: 35, dur: 2.8, delay: 0.5 },
-  { c: '#a78bfa',      s: 8,  top: 3,  left: 88, dur: 2.3, delay: 0.4 },
-  { c: '#34d399',      s: 7,  top: 12, left: 62, dur: 2.6, delay: 0.15 },
-];
+const getStatus = (booking) => {
+  const s = booking.status?.toLowerCase();
+  const p = booking.paymentStatus?.toLowerCase();
+  if (s === 'confirmed' || p === 'completed' || p === 'success') return 'success';
+  if (s === 'pending' || p === 'pending') return 'warning';
+  return 'default';
+};
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
+// ─────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────
 const BookingConfirmation = () => {
   const { bookingId } = useParams();
-  const [booking, setBooking]   = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
   const navigate = useNavigate();
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetch = async () => {
+    (async () => {
       try {
-        setLoading(true);
-        const user = auth.currentUser;
-        if (!user) { setError('Please log in to view booking details.'); return; }
-
-        const bookingData = await BookingService.getBookingById(bookingId);
-
+        if (!auth.currentUser) { setError('Please log in to view booking details.'); setLoading(false); return; }
+        const data = await BookingService.getBookingById(bookingId);
         let profile = {};
         try {
-          const snap = await getDoc(doc(db, 'users', user.uid));
+          const snap = await getDoc(doc(db, 'users', auth.currentUser.uid));
           if (snap.exists()) profile = snap.data();
         } catch {}
-
+        const combined = { uid: auth.currentUser.uid, email: auth.currentUser.email, displayName: auth.currentUser.displayName, ...profile };
         setBooking({
-          ...bookingData,
-          userName: bookingData.name || bookingData.userName || profile.name || profile.firstName || user.displayName,
-          userEmail: bookingData.email || bookingData.userEmail || profile.email || user.email,
-          userPhone: bookingData.contactNumber || bookingData.phone || profile.phone || profile.contactNumber,
+          ...data, userInfo: combined,
+          userName: data.name || data.userName || combined.name || combined.displayName || '',
+          userEmail: data.email || data.userEmail || combined.email || '',
+          userPhone: data.contactNumber || data.phoneNumber || combined.phone || combined.contactNumber || '',
         });
       } catch (e) {
         console.error(e);
-        setError('Could not retrieve booking details. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (bookingId) fetch();
+        setError('Could not retrieve booking details. Please try again.');
+      } finally { setLoading(false); }
+    })();
   }, [bookingId]);
 
-  // ---- loading ----
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: 'My Trek Booking', text: `Booking ID: ${bookingId}`, url: window.location.href }).catch(() => {});
+    } else { navigator.clipboard.writeText(window.location.href); }
+  };
+
   if (loading) return (
-    <Page>
-      <CenterBox>
-        <Spinner />
-        <LoadLabel>Loading your booking details…</LoadLabel>
-      </CenterBox>
-    </Page>
+    <FullCenter>
+      <BigSpinner />
+      <p style={{ color: theme.textMuted, fontSize: '0.9rem' }}>Loading your booking…</p>
+    </FullCenter>
   );
 
-  // ---- error / not found ----
   if (error || !booking) return (
-    <Page>
-      <CenterBox>
-        <ErrCard>
-          <FiAlertCircle size={44} color="#ef4444" />
-          <h3>{error ? 'Something went wrong' : 'Booking not found'}</h3>
-          <p>{error || 'We could not find this booking. Please check the ID.'}</p>
-          <CTARow>
-            <CTABtn onClick={() => navigate('/profile')}><FiUser />My Profile</CTABtn>
-            <CTABtn $primary onClick={() => navigate('/explore')}><FiCompass />Explore</CTABtn>
-          </CTARow>
-        </ErrCard>
-      </CenterBox>
-    </Page>
+    <PageWrapper>
+      <TopBar>
+        <TopBarInner>
+          <BackBtn onClick={() => navigate(-1)}><FiArrowLeft size={17}/></BackBtn>
+          <TopBarContent>
+            <TopBarLabel>Booking</TopBarLabel>
+            <TopBarTitle>Not <TopBarTitleAccent>Found</TopBarTitleAccent></TopBarTitle>
+          </TopBarContent>
+        </TopBarInner>
+      </TopBar>
+      <FullCenter>
+        <FiAlertCircle size={40} color={theme.primary} />
+        <h2 style={{ color: theme.textPrimary, fontSize: '1.25rem', fontWeight: 700 }}>{error || 'Booking not found'}</h2>
+        <p style={{ color: theme.textMuted, fontSize: '0.9rem' }}>We couldn't find booking details for this ID.</p>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <BtnConfirmSecondary onClick={() => navigate('/profile')}>My Profile</BtnConfirmSecondary>
+          <BtnConfirmPrimary onClick={() => navigate('/explore')}>Explore Treks</BtnConfirmPrimary>
+        </div>
+      </FullCenter>
+    </PageWrapper>
   );
 
-  // ---- derived ----
-  const isConfirmed = booking.status === 'confirmed' || booking.paymentStatus === 'completed' || booking.paymentStatus === 'success';
-  const totalAmt   = booking.totalAmount || booking.amount || booking.price || booking.finalAmount;
-  const discount   = booking.discountAmount || booking.discount;
-  const paymentId  = booking.paymentId || booking.transactionId || booking.razorpayPaymentId;
-  const pCount     = participantCount(booking);
-  const hasParticipants = Array.isArray(booking.participants) && booking.participants.length > 0;
+  // ─────────────────────────────────────────────
+  // ★ COMPUTED — Read stored values from BookingPage
+  // BookingPage saves:
+  //   totalAmount     = FULL trek cost (e.g. ₹6,170)
+  //   upfrontAmount   = 20% paid online (e.g. ₹1,234)
+  //   remainingAmount = 80% to organizer (e.g. ₹4,936)
+  //   pricePerPerson  = per person price
+  //   subtotal        = before discount
+  //   discount        = coupon discount
+  // ─────────────────────────────────────────────
+  const participantCount = getParticipantCount(booking);
+  const statusType = getStatus(booking);
+  const startDate = booking.startDate || booking.trekDate || booking.date;
+  const pricePerPerson = booking.pricePerPerson || 0;
+  const couponData = booking.coupon || null;
+  const discountApplied = booking.discount || booking.discountAmount || 0;
+
+  // ★ FULL trek cost — what the trek actually costs total
+  const fullTrekCost = (() => {
+    // Best case: BookingPage stored totalAmount as full cost AND upfrontAmount as 20%
+    if (booking.upfrontAmount && booking.totalAmount && booking.totalAmount > booking.upfrontAmount) {
+      return booking.totalAmount; // ✅ e.g. ₹6,170
+    }
+    // If subtotal exists, use that minus discount
+    if (booking.subtotal) {
+      return Math.max(booking.subtotal - discountApplied, 0);
+    }
+    // Calculate from pricePerPerson
+    if (pricePerPerson > 0) {
+      return Math.max((pricePerPerson * participantCount) - discountApplied, 0);
+    }
+    // If we only have totalAmount and no upfrontAmount, totalAmount IS the full cost
+    if (booking.totalAmount && !booking.upfrontAmount) {
+      return booking.totalAmount;
+    }
+    return booking.totalAmount || 0;
+  })();
+
+  // ★ 20% — what was paid via Razorpay
+  const upfrontPaid = booking.upfrontAmount   // Explicitly saved by BookingPage ✅
+    || booking.paidAmount
+    || booking.amountPaid
+    || Math.ceil(fullTrekCost * 0.20);         // Fallback for old bookings
+
+  // ★ 80% — what remains to pay organizer
+  const remaining = booking.remainingAmount   // Explicitly saved by BookingPage ✅
+    || booking.balanceAmount
+    || booking.amountDue
+    || Math.max(fullTrekCost - upfrontPaid, 0); // Fallback for old bookings
+
+  const subtotalAmount = booking.subtotal || (pricePerPerson * participantCount) || fullTrekCost;
+
+  // Debug log
+  console.log('💰 BookingConfirmation amounts:', {
+    fullTrekCost,
+    upfrontPaid,
+    remaining,
+    from_db: {
+      totalAmount: booking.totalAmount,
+      upfrontAmount: booking.upfrontAmount,
+      remainingAmount: booking.remainingAmount,
+      subtotal: booking.subtotal,
+      pricePerPerson: booking.pricePerPerson,
+      amount: booking.amount,
+    }
+  });
 
   return (
-    <Page>
-      {/* ── BANNER ── */}
-      <SuccessBanner>
-        <BannerPattern />
-        {CONFETTI.map((c, i) => (
-          <Dot key={i} $c={c.c} $s={c.s} $top={c.top} $left={c.left} $dur={c.dur} $delay={c.delay} />
-        ))}
+    <PageWrapper>
 
-        <CheckCircle>
-          <FiCheckCircle size={48} strokeWidth={2.5} />
-        </CheckCircle>
+      {/* ★ PREMIUM TOP BAR */}
+      <TopBar>
+        <TopBarInner>
+          <BackBtn onClick={() => navigate(-1)}>
+            <FiArrowLeft size={17}/>
+          </BackBtn>
+          <TopBarContent>
+            <TopBarLabel>
+              <FiCheckCircle size={10}/>
+              Adventure Confirmed
+            </TopBarLabel>
+            <TopBarTitle>
+              Booking <TopBarTitleAccent>Confirmed!</TopBarTitleAccent>
+            </TopBarTitle>
+          </TopBarContent>
+          <TopBarRight>
+            <TopBarBadge>
+              <FiShield size={11}/>
+              <span>Razorpay Secured</span>
+            </TopBarBadge>
+            <IconBtn onClick={handleShare} title="Share">
+              <FiShare2 size={15}/>
+            </IconBtn>
+          </TopBarRight>
+        </TopBarInner>
+      </TopBar>
 
-        <BannerTitle>🎉 Booking Confirmed!</BannerTitle>
-        <BannerSub>Your adventure is all set and waiting for you.</BannerSub>
+      <PageBody>
 
-        <BookingBadge>
-          <FiTag size={13} />
-          {booking.id || bookingId}
-        </BookingBadge>
-      </SuccessBanner>
+        {/* Success hero */}
+        <SuccessHero>
+          <SuccessCircle><FiCheckCircle size={36}/></SuccessCircle>
+          <SuccessTitle>Booking Confirmed! 🎉</SuccessTitle>
+          <SuccessSubtitle>
+            Your adventure is locked in. We've sent a confirmation to {booking.userEmail || 'your email'}.
+          </SuccessSubtitle>
+          <BookingIdPill><FiFileText size={13}/>{booking.id}</BookingIdPill>
+        </SuccessHero>
 
-      {/* ── CONTENT ── */}
-      <ContentWrap>
+        {/* ★ Payment status — shows correct split amounts */}
+        <PayStatusBanner>
+          <PayStatusItem $success>
+            <PayStatusLabel><FiCheckCircle size={11}/>Paid Online (20%)</PayStatusLabel>
+            <PayStatusValue $success>₹{upfrontPaid.toLocaleString('en-IN')}</PayStatusValue>
+            <PayStatusNote>Booking deposit via Razorpay · Confirmed</PayStatusNote>
+          </PayStatusItem>
+          <PayStatusItem>
+            <PayStatusLabel><FiInfo size={11}/>Pay to Organizer (80%)</PayStatusLabel>
+            <PayStatusValue>₹{remaining.toLocaleString('en-IN')}</PayStatusValue>
+            <PayStatusNote>Remaining balance · Due on trek day</PayStatusNote>
+          </PayStatusItem>
+        </PayStatusBanner>
 
-        {/* ── TREK DETAILS ── */}
+        {/* Trek details */}
         {booking.trek && (
-          <TicketCard $delay="0.1s">
-            <CardBand>
-              <FiMapPin size={15} />
-              <BandLabel>Trek Details</BandLabel>
-            </CardBand>
+          <Card $delay="0.1s">
+            <CardHead>
+              <CardIconWrap><FiMapPin size={16}/></CardIconWrap>
+              <CardTitle>Trek Details</CardTitle>
+            </CardHead>
             <CardBody>
               {booking.trek.imageUrl && (
-                <TrekHero>
-                  <img src={booking.trek.imageUrl} alt={booking.trek.title} />
-                  <TrekHeroText>
-                    <h3>{booking.trek.title}</h3>
-                    {booking.trek.location && (
-                      <span><FiMapPin size={12} />{booking.trek.location}</span>
-                    )}
-                  </TrekHeroText>
-                </TrekHero>
+                <TrekImageWrap>
+                  <TrekImage src={booking.trek.imageUrl} alt={booking.trek.title}/>
+                  <TrekImageOverlay/>
+                </TrekImageWrap>
               )}
-              <Grid>
-                {booking.trek.title && (
-                  <Cell>
-                    <CellLabel><FiCompass size={11} />Trek</CellLabel>
-                    <CellValue>{booking.trek.title}</CellValue>
-                  </Cell>
-                )}
-                {booking.trek.location && (
-                  <Cell>
-                    <CellLabel><FiMapPin size={11} />Location</CellLabel>
-                    <CellValue>{booking.trek.location}</CellValue>
-                  </Cell>
-                )}
+              <DetailGrid>
+                <DetailItem>
+                  <DetailLabel>Trek Name</DetailLabel>
+                  <DetailValue>{booking.trek.title || booking.trek.name || '—'}</DetailValue>
+                </DetailItem>
+                <DetailItem>
+                  <DetailLabel>Location</DetailLabel>
+                  <DetailValue>{booking.trek.location || '—'}</DetailValue>
+                </DetailItem>
                 {booking.trek.duration && (
-                  <Cell>
-                    <CellLabel><FiClock size={11} />Duration</CellLabel>
-                    <CellValue>{booking.trek.duration}</CellValue>
-                  </Cell>
+                  <DetailItem><DetailLabel>Duration</DetailLabel><DetailValue>{booking.trek.duration}</DetailValue></DetailItem>
                 )}
                 {booking.trek.difficulty && (
-                  <Cell>
-                    <CellLabel><FiAlertCircle size={11} />Difficulty</CellLabel>
-                    <CellValue>{booking.trek.difficulty}</CellValue>
-                  </Cell>
+                  <DetailItem><DetailLabel>Difficulty</DetailLabel><DetailValue>{booking.trek.difficulty}</DetailValue></DetailItem>
                 )}
-              </Grid>
+              </DetailGrid>
             </CardBody>
-          </TicketCard>
+          </Card>
         )}
 
-        {/* ── BOOKING DETAILS ── */}
-        <TicketCard $delay="0.18s">
-          <CardBand>
-            <FiCalendar size={15} />
-            <BandLabel>Booking Details</BandLabel>
-          </CardBand>
+        {/* Booking details */}
+        <Card $delay="0.15s">
+          <CardHead>
+            <CardIconWrap><FiCalendar size={16}/></CardIconWrap>
+            <CardTitle>Booking Details</CardTitle>
+          </CardHead>
           <CardBody>
-            <Grid>
-              <Cell>
-                <CellLabel><FiCalendar size={11} />Start Date</CellLabel>
-                <CellValue>{formatDate(booking.startDate || booking.trekDate || booking.dateOfTrek || booking.date)}</CellValue>
-              </Cell>
-
-              <Cell>
-                <CellLabel><FiUsers size={11} />Participants</CellLabel>
-                <CellValue>{pCount} person{pCount !== 1 ? 's' : ''}</CellValue>
-              </Cell>
-
-              <Cell>
-                <CellLabel><FiCalendar size={11} />Booked On</CellLabel>
-                <CellValue>{formatDate(booking.createdAt || booking.bookingDate)}</CellValue>
-              </Cell>
-
-              <Cell>
-                <CellLabel><FiCheckCircle size={11} />Status</CellLabel>
-                <CellValue className={isConfirmed ? 'success' : 'warning'}>
-                  {isConfirmed ? '✓ Confirmed' : capitalize(booking.status || 'Pending')}
-                </CellValue>
-              </Cell>
-
-              {booking.trekName && (
-                <Cell>
-                  <CellLabel><FiCompass size={11} />Trek Name</CellLabel>
-                  <CellValue>{booking.trekName}</CellValue>
-                </Cell>
-              )}
-
-              {booking.specialRequests && (
-                <Cell style={{ gridColumn: '1 / -1' }}>
-                  <CellLabel><FiFileText size={11} />Special Requests</CellLabel>
-                  <CellValue>{booking.specialRequests}</CellValue>
-                </Cell>
-              )}
-            </Grid>
+            <DetailGrid>
+              <DetailItem><DetailLabel>Start Date</DetailLabel><DetailValue>{formatDate(startDate)}</DetailValue></DetailItem>
+              <DetailItem><DetailLabel>Participants</DetailLabel><DetailValue>{participantCount} person(s)</DetailValue></DetailItem>
+              <DetailItem><DetailLabel>Booked On</DetailLabel><DetailValue>{formatDate(booking.createdAt)}</DetailValue></DetailItem>
+              <DetailItem>
+                <DetailLabel>Status</DetailLabel>
+                <DetailValue>
+                  <StatusBadge $type={statusType}>
+                    {statusType === 'success' && <FiCheckCircle size={11}/>}
+                    {booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : 'Pending'}
+                  </StatusBadge>
+                </DetailValue>
+              </DetailItem>
+            </DetailGrid>
           </CardBody>
-        </TicketCard>
+        </Card>
 
-        {/* ── PARTICIPANTS ── */}
-        <TicketCard $delay="0.26s">
-          <CardBand>
-            <FiUsers size={15} />
-            <BandLabel>Participants ({pCount})</BandLabel>
-          </CardBand>
+        {/* Participants */}
+        <Card $delay="0.2s">
+          <CardHead>
+            <CardIconWrap><FiUsers size={16}/></CardIconWrap>
+            <CardTitle>Participants ({participantCount})</CardTitle>
+          </CardHead>
           <CardBody>
-            {hasParticipants ? (
+            {Array.isArray(booking.participants) && booking.participants.length > 0 ? (
               <ParticipantGrid>
                 {booking.participants.map((p, i) => (
-                  <ParticipantCard
-                    key={p.participantId || i}
-                    $primary={p.isPrimaryBooker}
-                    $delay={`${i * 0.07}s`}
-                  >
+                  <ParticipantCard key={p.participantId || i} $primary={p.isPrimaryBooker}>
                     {p.isPrimaryBooker && <PrimaryBadge>Primary</PrimaryBadge>}
-                    <PNum>Participant {i + 1}</PNum>
-                    <PName $hasBadge={p.isPrimaryBooker}>
-                      {p.name || `Participant ${i + 1}`}
-                    </PName>
-                    {p.email && (
-                      <PMeta><FiMail size={11} />{p.email}</PMeta>
-                    )}
-                    {p.age && (
-                      <PMeta><FiUser size={11} />Age: {p.age}</PMeta>
-                    )}
-                    {p.emergencyContact && (
-                      <PMeta><FiPhone size={11} />Emergency: {p.emergencyContact}</PMeta>
-                    )}
+                    <ParticipantNum>Participant {i+1}</ParticipantNum>
+                    <ParticipantName $hasBadge={p.isPrimaryBooker}>{p.name || `Participant ${i+1}`}</ParticipantName>
+                    {p.email && <ParticipantDetail><FiUser size={12}/>{p.email}</ParticipantDetail>}
+                    {p.age && <ParticipantDetail><FiClock size={12}/>Age: {p.age}</ParticipantDetail>}
+                    {p.emergencyContact && <ParticipantDetail><FiPhone size={12}/>Emergency: {p.emergencyContact}</ParticipantDetail>}
                   </ParticipantCard>
                 ))}
               </ParticipantGrid>
             ) : (
-              <Grid>
-                <Cell>
-                  <CellLabel><FiUsers size={11} />Total</CellLabel>
-                  <CellValue>{pCount} person{pCount !== 1 ? 's' : ''}</CellValue>
-                </Cell>
-                {booking.userName && (
-                  <Cell>
-                    <CellLabel><FiUser size={11} />Booker</CellLabel>
-                    <CellValue>{booking.userName}</CellValue>
-                  </Cell>
-                )}
-                {booking.userEmail && (
-                  <Cell>
-                    <CellLabel><FiMail size={11} />Email</CellLabel>
-                    <CellValue>{booking.userEmail}</CellValue>
-                  </Cell>
-                )}
-                {booking.userPhone && (
-                  <Cell>
-                    <CellLabel><FiPhone size={11} />Phone</CellLabel>
-                    <CellValue>{booking.userPhone}</CellValue>
-                  </Cell>
-                )}
-              </Grid>
+              <DetailGrid>
+                <DetailItem><DetailLabel>Participants</DetailLabel><DetailValue>{participantCount} person(s)</DetailValue></DetailItem>
+                {booking.userName && <DetailItem><DetailLabel>Primary Booker</DetailLabel><DetailValue>{booking.userName}</DetailValue></DetailItem>}
+              </DetailGrid>
             )}
           </CardBody>
-        </TicketCard>
+        </Card>
 
-        {/* ── PAYMENT ── */}
-        {(totalAmt || paymentId) && (
-          <TicketCard $delay="0.34s">
-            <CardBand $green>
-              <FiCreditCard size={15} />
-              <BandLabel>Payment Summary</BandLabel>
-            </CardBand>
+        {/* ★ Payment breakdown — uses stored amounts from BookingPage */}
+        {fullTrekCost > 0 && (
+          <Card $delay="0.25s">
+            <CardHead>
+              <CardIconWrap><FiCreditCard size={16}/></CardIconWrap>
+              <CardTitle>Payment Breakdown</CardTitle>
+            </CardHead>
             <CardBody>
-              {booking.pricePerPerson && (
-                <PaymentStrip>
-                  <PayLabel><FiTag size={13} />Price per person</PayLabel>
-                  <PayValue>₹{formatAmt(booking.pricePerPerson)}</PayValue>
-                </PaymentStrip>
-              )}
+              <SplitCard>
+                <SplitItem $paid>
+                  <SplitPercent $paid>20%</SplitPercent>
+                  <SplitLabel>Paid online<br/>Booking deposit</SplitLabel>
+                  <SplitAmount $paid>₹{upfrontPaid.toLocaleString('en-IN')}</SplitAmount>
+                  <SplitStatus $paid><FiCheckCircle size={10}/>Paid via Razorpay</SplitStatus>
+                </SplitItem>
+                <SplitItem>
+                  <SplitPercent>80%</SplitPercent>
+                  <SplitLabel>Pay to organizer<br/>On trek day</SplitLabel>
+                  <SplitAmount>₹{remaining.toLocaleString('en-IN')}</SplitAmount>
+                  <SplitStatus><FiInfo size={10}/>Due to organizer</SplitStatus>
+                </SplitItem>
+              </SplitCard>
 
-              {booking.pricePerPerson && pCount > 1 && (
-                <PaymentStrip>
-                  <PayLabel><FiUsers size={13} />× {pCount} participants</PayLabel>
-                  <PayValue>₹{formatAmt(booking.pricePerPerson * pCount)}</PayValue>
-                </PaymentStrip>
-              )}
-
-              {discount > 0 && (
-                <PaymentStrip>
-                  <PayLabel><FiTag size={13} />
-                    Discount {booking.coupon?.code && `(${booking.coupon.code})`}
-                  </PayLabel>
-                  <PayValue className="discount">− ₹{formatAmt(discount)}</PayValue>
-                </PaymentStrip>
-              )}
-
-              {paymentId && (
-                <PaymentStrip>
-                  <PayLabel><FiCreditCard size={13} />Payment ID</PayLabel>
-                  <PayValue style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>{paymentId}</PayValue>
-                </PaymentStrip>
-              )}
-
-              <TotalStrip>
-                <PayLabel><FiCheckCircle size={13} />Total Paid</PayLabel>
-                <PayValue className="big">₹{formatAmt(totalAmt)}</PayValue>
-              </TotalStrip>
+              <DetailGrid>
+                {pricePerPerson > 0 && (
+                  <DetailItem>
+                    <DetailLabel>Price per Person</DetailLabel>
+                    <DetailValue>₹{pricePerPerson.toLocaleString('en-IN')}</DetailValue>
+                  </DetailItem>
+                )}
+                {participantCount > 1 && subtotalAmount > 0 && (
+                  <DetailItem>
+                    <DetailLabel>Subtotal ({participantCount} people)</DetailLabel>
+                    <DetailValue>₹{subtotalAmount.toLocaleString('en-IN')}</DetailValue>
+                  </DetailItem>
+                )}
+                {discountApplied > 0 && (
+                  <DetailItem>
+                    <DetailLabel>Discount {couponData?.code ? `(${couponData.code})` : 'Applied'}</DetailLabel>
+                    <DetailValue style={{ color: theme.success }}>−₹{discountApplied.toLocaleString('en-IN')}</DetailValue>
+                  </DetailItem>
+                )}
+                <DetailItem>
+                  <DetailLabel>Total Trek Cost</DetailLabel>
+                  <DetailValue style={{ fontWeight: 700 }}>₹{fullTrekCost.toLocaleString('en-IN')}</DetailValue>
+                </DetailItem>
+                <DetailItem>
+                  <DetailLabel>Paid Online (20%)</DetailLabel>
+                  <DetailValue style={{ color: theme.success }}>₹{upfrontPaid.toLocaleString('en-IN')}</DetailValue>
+                </DetailItem>
+                <DetailItem>
+                  <DetailLabel>Balance to Organizer (80%)</DetailLabel>
+                  <DetailValue>₹{remaining.toLocaleString('en-IN')}</DetailValue>
+                </DetailItem>
+                {(booking.paymentId || booking.transactionId || booking.razorpayPaymentId) && (
+                  <DetailItem>
+                    <DetailLabel>Payment ID</DetailLabel>
+                    <DetailValue style={{ fontSize: '0.8rem', fontFamily: 'Courier New, monospace' }}>
+                      {booking.paymentId || booking.transactionId || booking.razorpayPaymentId}
+                    </DetailValue>
+                  </DetailItem>
+                )}
+              </DetailGrid>
             </CardBody>
-          </TicketCard>
+          </Card>
         )}
 
-        {/* ── EMERGENCY CONTACT ── */}
+        {/* Emergency contact */}
         {(booking.emergencyName || booking.emergencyContact || booking.emergencyPhone) && (
-          <TicketCard $delay="0.42s">
-            <CardBand>
-              <FiPhone size={15} />
-              <BandLabel>Emergency Contact</BandLabel>
-            </CardBand>
+          <Card $delay="0.3s">
+            <CardHead>
+              <CardIconWrap><FiPhone size={16}/></CardIconWrap>
+              <CardTitle>Emergency Contact</CardTitle>
+            </CardHead>
             <CardBody>
-              <Grid>
-                {booking.emergencyName && (
-                  <Cell>
-                    <CellLabel><FiUser size={11} />Name</CellLabel>
-                    <CellValue>{booking.emergencyName}</CellValue>
-                  </Cell>
-                )}
+              <DetailGrid>
+                {booking.emergencyName && <DetailItem><DetailLabel>Name</DetailLabel><DetailValue>{booking.emergencyName}</DetailValue></DetailItem>}
                 {(booking.emergencyContact || booking.emergencyPhone) && (
-                  <Cell>
-                    <CellLabel><FiPhone size={11} />Number</CellLabel>
-                    <CellValue>{booking.emergencyContact || booking.emergencyPhone}</CellValue>
-                  </Cell>
+                  <DetailItem><DetailLabel>Contact Number</DetailLabel><DetailValue>{booking.emergencyContact || booking.emergencyPhone}</DetailValue></DetailItem>
                 )}
-              </Grid>
+              </DetailGrid>
             </CardBody>
-          </TicketCard>
+          </Card>
         )}
 
-        {/* ── CTA BUTTONS ── */}
-        <CTARow>
-          <CTABtn onClick={() => navigate('/profile')}>
-            <FiHome size={16} /> My Bookings
-          </CTABtn>
-          <CTABtn $primary onClick={() => navigate('/explore')}>
-            <FiCompass size={16} /> Explore More <FiArrowRight size={14} />
-          </CTABtn>
-        </CTARow>
+        {/* Special requests */}
+        {booking.specialRequests && (
+          <Card $delay="0.32s">
+            <CardHead>
+              <CardIconWrap><FiFileText size={16}/></CardIconWrap>
+              <CardTitle>Special Requests</CardTitle>
+            </CardHead>
+            <CardBody>
+              <p style={{ color: theme.textSecondary, fontSize: '0.88rem', lineHeight: 1.6, margin: 0 }}>
+                {booking.specialRequests}
+              </p>
+            </CardBody>
+          </Card>
+        )}
 
-      </ContentWrap>
-    </Page>
+        {/* ★ Trust note — uses stored amounts */}
+        <TrustNote>
+          <FiShield size={14} style={{ color: theme.success, flexShrink: 0, marginTop: '1px' }}/>
+          <span>
+            Your 20% deposit (₹{upfrontPaid.toLocaleString('en-IN')}) has been securely processed
+            via Razorpay. The remaining 80% (₹{remaining.toLocaleString('en-IN')}) is payable
+            directly to the trek organizer on your trek day.
+            Total trek cost: ₹{fullTrekCost.toLocaleString('en-IN')}.
+          </span>
+        </TrustNote>
+
+      </PageBody>
+
+      {/* ★ PREMIUM COMPACT FOOTER */}
+      <ConfirmFooter>
+        <ConfirmFooterInner>
+          <ConfirmFooterInfo>
+            <ConfirmFooterTitle>Booking Reference</ConfirmFooterTitle>
+            <ConfirmFooterId>
+              {booking?.id?.length > 22 ? `${booking.id.substring(0, 22)}…` : booking?.id}
+            </ConfirmFooterId>
+            <ConfirmFooterStatus>
+              <FiCheckCircle size={11}/> Confirmed & Paid
+            </ConfirmFooterStatus>
+          </ConfirmFooterInfo>
+          <ConfirmFooterDivider/>
+          <ConfirmFooterBtns>
+            <BtnConfirmSecondary onClick={() => navigate('/profile')}>
+              <FiFileText size={14}/> My Bookings
+            </BtnConfirmSecondary>
+            <BtnConfirmPrimary onClick={() => navigate('/explore')}>
+              Explore Treks <FiChevronRight size={15}/>
+            </BtnConfirmPrimary>
+          </ConfirmFooterBtns>
+        </ConfirmFooterInner>
+      </ConfirmFooter>
+
+    </PageWrapper>
   );
 };
 

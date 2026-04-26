@@ -1,4 +1,4 @@
-// TrekDetails.jsx - Final merged version
+// TrekDetails.jsx - Integrated with central theme
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled, { createGlobalStyle, keyframes } from "styled-components";
@@ -17,6 +17,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getValidImageUrl } from "../utils/images";
 import { saveBooking } from "../utils/bookingService";
 
+// ✅ Import central theme instead of local tokens
+import { T as tokens } from '../theme.js';
+
 // Import modular components
 import Header from "./TrekPage/Header";
 import Hero from "./TrekPage/Hero";
@@ -32,24 +35,6 @@ import PhotoGallery from "./TrekPage/PhotoGallery";
 import GalleryModal from "./TrekPage/GalleryModal";
 import ReviewsSection from "./TrekPage/ReviewsSection";
 import WhatsAppButton from "./TrekPage/WhatsAppButton";
-// ✅ NO BookingModal import — we navigate to BookingPage instead
-
-// ============================================================
-// DESIGN TOKENS
-// ============================================================
-const tokens = {
-  colors: {
-    bg: "#0a0a0a",
-    bgCard: "#121212",
-    border: "rgba(255,255,255,0.07)",
-    primary: "#f97316",
-    primaryDark: "#c2410c",
-    textPrimary: "#F1F5F9",
-    textMuted: "#475569",
-  },
-  radius: { lg: "16px", xl: "20px" },
-  transition: { base: "all 0.25s ease" },
-};
 
 // ============================================================
 // GLOBAL STYLES
@@ -69,8 +54,8 @@ const GlobalStyles = createGlobalStyle`
   }
 
   body {
-    background: ${tokens.colors.bg};
-    color: ${tokens.colors.textPrimary};
+    background: ${tokens.bg};
+    color: ${tokens.textPrimary};
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
     overflow-x: hidden;
@@ -78,9 +63,9 @@ const GlobalStyles = createGlobalStyle`
   }
 
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: ${tokens.colors.bg}; }
+  ::-webkit-scrollbar-track { background: ${tokens.bg}; }
   ::-webkit-scrollbar-thumb {
-    background: ${tokens.colors.primary};
+    background: ${tokens.primary};
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover { background: #fb923c; }
@@ -124,8 +109,8 @@ const slideHorizontal = keyframes`
 // ============================================================
 const PageWrapper = styled.div`
   min-height: 100vh;
-  background: ${tokens.colors.bg};
-  color: ${tokens.colors.textPrimary};
+  background: ${tokens.bg};
+  color: ${tokens.textPrimary};
   position: relative;
   overflow-x: hidden;
 `;
@@ -196,7 +181,7 @@ const SectionNavWrapper = styled.div`
   z-index: 80;
   background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid ${tokens.colors.border};
+  border-bottom: 1px solid ${tokens.border};
   transition: ${tokens.transition.base};
 
   &.scrolled {
@@ -269,7 +254,7 @@ const NavItem = styled.button`
   padding: 1.25rem 1.5rem;
   background: transparent;
   border: none;
-  color: ${({ $active }) => $active ? tokens.colors.primary : tokens.colors.textMuted};
+  color: ${({ $active }) => $active ? tokens.primary : tokens.textMuted};
   font-size: 0.875rem;
   font-weight: ${({ $active }) => $active ? 600 : 500};
   cursor: pointer;
@@ -279,7 +264,7 @@ const NavItem = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    color: ${tokens.colors.primary};
+    color: ${tokens.primary};
   }
 
   &::after {
@@ -289,7 +274,7 @@ const NavItem = styled.button`
     left: 0;
     right: 0;
     height: 2px;
-    background: ${tokens.colors.primary};
+    background: ${tokens.primary};
     transform: scaleX(${({ $active }) => $active ? 1 : 0});
     transition: transform 0.3s ease;
   }
@@ -329,7 +314,7 @@ const ScrollIndicator = styled.div`
     justify-content: center;
     padding: 0.5rem 0 0.25rem;
     font-size: 0.7rem;
-    color: ${tokens.colors.textMuted};
+    color: ${tokens.textMuted};
     gap: 0.5rem;
     animation: ${fadeIn} 0.3s ease;
     
@@ -367,18 +352,18 @@ const MobileBar = styled(motion.div)`
 const MobilePrice = styled.div`
   font-family: "Sora", sans-serif;
   font-size: 1.4rem;
-  color: ${tokens.colors.primary};
+  color: ${tokens.primary};
   line-height: 1;
 
   sub {
     font-size: 0.75rem;
-    color: ${tokens.colors.textMuted};
+    color: ${tokens.textMuted};
   }
 `;
 
 const MobileLabel = styled.div`
   font-size: 0.72rem;
-  color: ${tokens.colors.textMuted};
+  color: ${tokens.textMuted};
   margin-bottom: 0.25rem;
 `;
 
@@ -391,8 +376,8 @@ const PrimaryBtn = styled.button`
   border: none;
   background: linear-gradient(
     135deg,
-    ${tokens.colors.primary} 0%,
-    ${tokens.colors.primaryDark} 100%
+    ${tokens.primary} 0%,
+    ${tokens.primaryDark} 100%
   );
   color: white;
   font-weight: 700;
@@ -420,7 +405,7 @@ const FullCenter = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${tokens.colors.bg};
+  background: ${tokens.bg};
 `;
 
 const LoadingWrapper = styled.div`
@@ -437,19 +422,19 @@ const LoadingSpinner = styled.div`
   height: 48px;
   border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, 0.07);
-  border-top-color: ${tokens.colors.primary};
+  border-top-color: ${tokens.primary};
   animation: ${spin} 0.8s linear infinite;
 `;
 
 const LoadingTitle = styled.h2`
   font-size: 1.375rem;
   font-weight: 600;
-  color: ${tokens.colors.textPrimary};
+  color: ${tokens.textPrimary};
 `;
 
 const LoadingSubtitle = styled.p`
   font-size: 0.9rem;
-  color: ${tokens.colors.textMuted};
+  color: ${tokens.textMuted};
 `;
 
 const SkeletonBar = styled.div`
@@ -485,8 +470,8 @@ const HomeBtn = styled.button`
   border: none;
   background: linear-gradient(
     135deg,
-    ${tokens.colors.primary},
-    ${tokens.colors.primaryDark}
+    ${tokens.primary},
+    ${tokens.primaryDark}
   );
   color: white;
   font-weight: 600;
@@ -857,8 +842,6 @@ export default function TrekDetails() {
   }, [id, loading]);
 
   // ── Handlers ─────────────────────────────────────────────
-
-  // ✅ CORRECT: navigates to BookingPage instead of opening modal
   const handleBook = () => {
     if (!authUser) {
       navigate("/login", { state: { redirectTo: `/trek/${id}` } });
@@ -977,10 +960,10 @@ export default function TrekDetails() {
     return (
       <FullCenter>
         <ErrorWrapper>
-          <h2 style={{ color: tokens.colors.textPrimary, fontSize: "1.375rem", fontWeight: 700 }}>
+          <h2 style={{ color: tokens.textPrimary, fontSize: "1.375rem", fontWeight: 700 }}>
             Trek Not Found
           </h2>
-          <p style={{ color: tokens.colors.textMuted, fontSize: "0.9rem" }}>
+          <p style={{ color: tokens.textMuted, fontSize: "0.9rem" }}>
             We couldn't find the trail you're looking for.
           </p>
           <HomeBtn onClick={() => navigate("/")}>Go Home</HomeBtn>
@@ -995,7 +978,6 @@ export default function TrekDetails() {
       <GlobalStyles />
 
       <PageWrapper>
-        {/* HEADER */}
         <Header
           title={title}
           scrolled={navScrolled}
@@ -1005,7 +987,6 @@ export default function TrekDetails() {
           onBook={handleBook}
         />
 
-        {/* HERO */}
         <Hero
           title={title}
           description={description}
@@ -1027,7 +1008,6 @@ export default function TrekDetails() {
           organizerVerified={trek?.organizerVerified}
         />
 
-        {/* STATS BAR */}
         <Stats
           days={days}
           altitude={altitude}
@@ -1037,7 +1017,6 @@ export default function TrekDetails() {
           season={season}
         />
 
-        {/* SECTION NAVIGATION */}
         <SectionNavWrapper className={navScrolled ? 'scrolled' : ''}>
           <SectionNavContainer>
             <SectionNavScroller ref={sectionNavScrollerRef}>
@@ -1065,11 +1044,9 @@ export default function TrekDetails() {
           </SectionNavContainer>
         </SectionNavWrapper>
 
-        {/* MAIN CONTENT */}
         <MainLayout>
           <Container>
             <ContentGrid>
-              {/* LEFT COLUMN */}
               <MainCol>
                 <div ref={(el) => (sectionRefs.current.overview = el)} data-section="overview">
                   <Description description={description} detailedDescription={detailedDesc} />
@@ -1088,7 +1065,6 @@ export default function TrekDetails() {
                 </div>
               </MainCol>
 
-              {/* RIGHT COLUMN */}
               <SideCol>
                 <BookingCard
                   cardRef={bookingCardRef}
@@ -1110,7 +1086,6 @@ export default function TrekDetails() {
             </ContentGrid>
           </Container>
 
-          {/* ORGANIZER SECTION */}
           <Container>
             <div ref={(el) => (sectionRefs.current.organizer = el)} data-section="organizer">
               <MeetOrganizer
@@ -1131,7 +1106,6 @@ export default function TrekDetails() {
           </Container>
         </MainLayout>
 
-        {/* PHOTO GALLERY */}
         <div ref={(el) => (sectionRefs.current.gallery = el)} data-section="gallery">
           <PhotoGallery
             images={images}
@@ -1143,14 +1117,12 @@ export default function TrekDetails() {
           />
         </div>
 
-        {/* REVIEWS */}
         <Container>
           <div ref={(el) => (sectionRefs.current.reviews = el)} data-section="reviews">
             <ReviewsSection reviews={reviews} rating={rating} />
           </div>
         </Container>
 
-        {/* MOBILE BOOKING BAR */}
         <MobileBar
           initial={{ y: 100 }}
           animate={{ y: 0 }}
@@ -1166,7 +1138,6 @@ export default function TrekDetails() {
           <PrimaryBtn onClick={handleBook}>Book Now →</PrimaryBtn>
         </MobileBar>
 
-        {/* GALLERY MODAL */}
         <GalleryModal
           isOpen={galleryOpen}
           images={images}
@@ -1176,7 +1147,6 @@ export default function TrekDetails() {
           title={title}
         />
 
-        {/* WHATSAPP BUTTON */}
         <WhatsAppButton href={waHref} />
       </PageWrapper>
     </>

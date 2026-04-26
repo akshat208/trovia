@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect , useLayoutEffect} from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion'; 
 import Banner from './components/Banner/Banner';
 import FeaturedTreks from './components/FeaturedTreks';
@@ -53,19 +53,17 @@ import VerifyCertificate from './Interns/VerifyCertificate';
 import CertificateAdmin from './Interns/CertificateAdmin';
 import InternshipJoin from './intern_join'; 
 import Support from "./pages/SupportPage";
-
-// ✅ CORRECT: Import BookingPage from BookingPage.jsx (not BookingModal)
 import BookingPage from './components/BookingPage';
 
+// ─────────────────────────────────────────────
+// PAGE TRANSITION
+// ─────────────────────────────────────────────
 const PageTransition = ({ children }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        duration: 0.3,
-        ease: "easeOut"
-      }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       style={{ width: '100%' }}
     >
       {children}
@@ -73,6 +71,51 @@ const PageTransition = ({ children }) => {
   );
 };
 
+// ─────────────────────────────────────────────
+// ROUTES WHERE BOTTOM NAV SHOULD BE HIDDEN
+// ─────────────────────────────────────────────
+const HIDDEN_NAV_ROUTES = [
+  '/trek',
+  '/booking/',
+  '/booking-confirmation/',
+];
+
+// ─────────────────────────────────────────────
+// BOTTOM NAV WITH ROUTE AWARENESS
+// ─────────────────────────────────────────────
+const ConditionalBottomNav = () => {
+  const location = useLocation();
+
+  const shouldHide = HIDDEN_NAV_ROUTES.some(route =>
+    location.pathname.startsWith(route)
+  );
+
+  if (shouldHide) return null;
+
+  return <BottomNavbar />;
+};
+// ─────────────────────────────────────────────
+// ★ SCROLL TO TOP ON EVERY ROUTE CHANGE + INITIAL LOAD
+// ─────────────────────────────────────────────
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  // ★ Handle initial page load (before paint)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // ★ Handle every route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
+// ─────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────
 function App() {
   useEffect(() => {
     const performCleanup = async () => {
@@ -95,7 +138,9 @@ function App() {
     <Router>
       <SearchProvider>
         <div className="App">
-          <BottomNavbar />
+          {/* ✅ ConditionalBottomNav hides on booking pages */}
+          <ConditionalBottomNav />
+          <ScrollToTop />
           <div className="main-content">
             <Routes>
               <Route path="/" element={
@@ -270,7 +315,7 @@ function App() {
                   </AccessControl>
                 </PageTransition>
               } />
-              
+
               {/* --- ORGANIZER ROUTES --- */}
               <Route path="/organizer/treks" element={
                 <PageTransition>
@@ -286,8 +331,6 @@ function App() {
                   </AccessControl>
                 </PageTransition>
               } />
-              
-              {/* Bookings Route (Must be BEFORE :id) */}
               <Route path="/organizer/bookings" element={
                 <PageTransition>
                   <AccessControl requiredRole="organizer">
@@ -295,7 +338,6 @@ function App() {
                   </AccessControl>
                 </PageTransition>
               } />
-
               <Route path="/organizer/settings" element={
                 <PageTransition>
                   <AccessControl requiredRole="organizer">
@@ -303,7 +345,6 @@ function App() {
                   </AccessControl>
                 </PageTransition>
               } />
-
               <Route path="/access-control" element={
                 <PageTransition>
                   <AccessControl />
@@ -335,26 +376,25 @@ function App() {
                   </AccessControl>
                 </PageTransition>
               } />
-              
-              {/* ⚠️ DYNAMIC ROUTE LAST */}
+
               <Route path="/organizer/:id" element={
                 <PageTransition>
                   <OrganizerProfile />
                 </PageTransition>
               } />
 
-              {/* ✅ BOOKING PAGE ROUTE */}
+              {/* ✅ BOOKING ROUTES */}
               <Route path="/booking/:id" element={
                 <PageTransition>
                   <BookingPage />
                 </PageTransition>
               } />
-              
               <Route path="/booking-confirmation/:bookingId" element={
                 <PageTransition>
                   <BookingConfirmation />
                 </PageTransition>
               } />
+
               <Route path="/verify/:certificateId" element={<VerifyCertificate />} />
               <Route path="/admin/certificates" element={
                 <PageTransition>
